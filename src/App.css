@@ -1,184 +1,5821 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+:root {
+  --cream: #f4e7c1;
+  --cream-dim: #b8aa87;
+  --ink: #100f0d;
+  --matcha: #29352c;
+  --matcha-2: #455643;
+  --jade: #4f7560;
+  --red: #8e2f32;
+  --gold: #d2a34f;
+  --dark-gold: #78582d;
 }
 
-.hero {
+* {
+  box-sizing: border-box;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
   position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 720px;
+  overflow: hidden;
+  color: var(--cream);
+  background: #111512;
+  image-rendering: pixelated;
+  isolation: isolate;
+}
 
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
+/* ---------------- MEMORY ---------------- */
+
+.memory-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  overflow: hidden;
+  background: #171917;
+}
+
+.memory-video {
+  position: absolute;
+  inset: -4%;
+  background:
+    radial-gradient(
+      ellipse at 36% 38%,
+      rgba(220, 220, 220, 0.7) 0 7%,
+      rgba(90, 90, 90, 0.55) 8% 18%,
+      transparent 25%
+    ),
+    radial-gradient(
+      ellipse at 71% 42%,
+      rgba(200, 200, 200, 0.38) 0 8%,
+      rgba(70, 70, 70, 0.42) 10% 22%,
+      transparent 31%
+    ),
+    linear-gradient(115deg, #101010, #696969 48%, #141414);
+  filter: grayscale(1) blur(6px) brightness(0.42) contrast(1.07);
+  transform: scale(1.08);
+  animation: memory-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes memory-drift {
+  from {
+    transform: scale(1.08) translate3d(-1%, 0, 0);
   }
 
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
+  to {
+    transform: scale(1.13) translate3d(1%, -1%, 0);
   }
 }
 
-#center {
+.memory-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(5, 10, 7, 0.18),
+      rgba(5, 10, 7, 0.12) 45%,
+      rgba(5, 10, 7, 0.68)
+    );
+}
+
+.memory-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.17;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 3px,
+    rgba(255, 255, 255, 0.06) 4px
+  );
+}
+
+.lyrics {
+  position: absolute;
+  z-index: 3;
+  top: 14%;
+  left: 50%;
+  width: min(670px, 48vw);
+  transform: translateX(-50%);
+  display: grid;
+  gap: 9px;
+  text-align: center;
+  filter: grayscale(1);
+  color: #dedede;
+  text-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.95),
+    0 0 10px rgba(255, 255, 255, 0.12);
+}
+
+.lyrics strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(27px, 3vw, 49px);
+  line-height: 1;
+  letter-spacing: 0.1em;
+}
+
+.lyric-old,
+.lyric-next {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  opacity: 0.52;
+}
+
+/* ---------------- TOP ---------------- */
+
+.topbar {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(220, 189, 116, 0.23);
+  background: rgba(13, 17, 14, 0.72);
+  backdrop-filter: blur(7px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-transform: lowercase;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.brand-mark {
+  color: var(--gold);
+}
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--cream-dim);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.topbar-status i {
+  width: 4px;
+  height: 4px;
+  background: var(--gold);
+}
+
+/* ---------------- MODE SELECTOR ---------------- */
+
+.mode-picker {
+  position: absolute;
+  z-index: 10;
+  top: 63px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: 34px minmax(220px, 340px) 34px;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-arrow {
+  height: 34px;
+  border: 1px solid rgba(222, 194, 126, 0.35);
+  background: rgba(14, 17, 14, 0.72);
+  color: var(--cream);
+  font-size: 26px;
+}
+
+.mode-arrow:hover {
+  border-color: var(--gold);
+}
+
+.mode-readout {
+  min-height: 51px;
+  padding: 7px 17px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "number title location";
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(216, 180, 99, 0.42);
+  border-bottom: 1px solid rgba(216, 180, 99, 0.42);
+  background: rgba(13, 16, 13, 0.74);
+}
+
+.mode-number {
+  grid-area: number;
+  color: var(--gold);
+  font-size: 9px;
+}
+
+.mode-readout strong {
+  grid-area: title;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.mode-location {
+  grid-area: location;
+  color: var(--cream-dim);
+  font-size: 8px;
+}
+
+.mode-dots {
+  position: absolute;
+  z-index: 10;
+  top: 125px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+}
+
+.mode-dot {
+  padding: 5px 9px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  color: rgba(240, 226, 190, 0.42);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.mode-dot span {
+  margin-right: 5px;
+  color: inherit;
+}
+
+.mode-dot.active {
+  color: var(--cream);
+  border-bottom-color: var(--gold);
+}
+
+/* ---------------- STAGE ---------------- */
+
+.keepsake {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 138px;
+  width: min(790px, 55vw);
+  height: min(570px, 63vh);
+  transform: translateX(-50%);
+  transition:
+    opacity 170ms steps(3),
+    transform 170ms steps(3);
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  max-height: 82%;
+  object-fit: contain;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+  user-select: none;
+}
+
+/*
+  Each performer gets independent placement because the silhouettes
+  are very different.
+*/
+
+/* ---------------- TIMER ---------------- */
+
+.timer-zone {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: 42px;
+  transform: translateX(-50%);
+  width: 330px;
+  display: grid;
+  justify-items: center;
+}
+
+.session-label {
+  margin-bottom: 2px;
+  color: var(--gold);
+  font-size: 8px;
+  letter-spacing: 0.24em;
+}
+
+.timer {
+  border: 0;
+  background: transparent;
+  color: #f1d48a;
+  font-size: clamp(39px, 4.2vw, 62px);
+  line-height: 0.95;
+  letter-spacing: 0.08em;
+  text-shadow:
+    3px 3px 0 #3b2218,
+    0 0 17px rgba(215, 176, 89, 0.14);
+}
+
+.timer-status {
+  margin-top: 5px;
+  color: rgba(240, 223, 177, 0.68);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+}
+
+.timer-actions {
+  display: flex;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.timer-actions button {
+  min-width: 68px;
+  padding: 4px 8px;
+  border: 1px solid rgba(224, 192, 121, 0.35);
+  background: rgba(18, 24, 19, 0.66);
+  color: var(--cream-dim);
+  font-size: 7px;
+}
+
+.timer-actions button:hover {
+  color: var(--cream);
+  border-color: var(--gold);
+}
+
+/* ---------------- DVD ---------------- */
+
+.dvd-shell {
+  position: absolute;
+  z-index: 7;
+  left: 3.3%;
+  top: 50%;
+  width: min(280px, 20vw);
+  transform: translateY(-44%);
+  border: 2px solid #433b2d;
+  background: rgba(138, 121, 87, 0.92);
+  box-shadow:
+    inset 0 0 0 2px rgba(221, 196, 139, 0.22),
+    5px 5px 0 rgba(0, 0, 0, 0.28);
+  color: #26251e;
+}
+
+.dvd-top {
+  padding: 6px 9px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 2px solid #514936;
+  font-size: 8px;
+}
+
+.dvd-display {
+  margin: 8px;
+  padding: 11px;
+  min-height: 105px;
+  display: grid;
+  gap: 7px;
+  background: #10211d;
+  border: 3px inset #5a5242;
+  color: #6fb8a2;
+  font-size: 9px;
+}
+
+.dvd-display strong {
+  color: #b7d38f;
+  font-size: 13px;
+}
+
+.dvd-track {
+  color: #71bebe;
+}
+
+.dvd-meta {
+  display: flex;
+  justify-content: space-between;
+  color: #82946b;
+  font-size: 7px;
+}
+
+.dvd-controls {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  padding: 0 8px 8px;
+}
+
+.dvd-controls button {
+  border: 2px outset #9e9275;
+  background: #756d5a;
+  color: #22231e;
+}
+
+.queue {
+  padding: 7px;
+  border-top: 1px solid #554b37;
+  display: grid;
+  gap: 2px;
+  font-size: 7px;
+}
+
+.queue > span {
+  padding: 2px 4px 5px;
+}
+
+.queue button {
+  border: 0;
+  padding: 5px;
+  text-align: left;
+  background: transparent;
+  color: #302d25;
+}
+
+.queue button.queue-active {
+  background: #445641;
+  color: #e7d9aa;
+}
+
+/* ---------------- CRT ---------------- */
+
+.media-terminal {
+  position: absolute;
+  z-index: 7;
+  right: 3.3%;
+  top: 54%;
+  width: min(270px, 19vw);
+  transform: translateY(-50%);
+  padding: 8px;
+  border: 4px solid #37352e;
+  background: #6a6456;
+  box-shadow:
+    inset 0 0 0 2px #877f6c,
+    6px 6px 0 rgba(0, 0, 0, 0.3);
+}
+
+.terminal-title {
+  padding: 3px 3px 8px;
+  color: #282722;
+  font-size: 8px;
+}
+
+.terminal-screen {
+  min-height: 140px;
+  padding: 13px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border: 4px inset #49453c;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 3px,
+      rgba(93, 226, 116, 0.035) 4px
+    ),
+    #071c16;
+  color: #69d67b;
+  font-size: 8px;
+}
+
+.terminal-screen input {
+  width: 100%;
+  padding: 4px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(98, 211, 113, 0.3);
+  outline: 0;
+  background: transparent;
+  color: #8be599;
+  font-size: 7px;
+}
+
+.terminal-screen input::placeholder {
+  color: rgba(105, 214, 123, 0.45);
+}
+
+.media-services {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-around;
+  color: #78b57a;
+}
+
+/* ---------------- FOOTER ---------------- */
+
+.footer {
+  position: absolute;
+  z-index: 18;
+  left: 18px;
+  right: 18px;
+  bottom: 9px;
+  display: flex;
+  justify-content: space-between;
+  color: rgba(213, 190, 132, 0.35);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 1100px) {
+  .keepsake {
+    width: 570px;
+  }
+
+  .dvd-shell {
+    transform: translateY(-44%) scale(0.83);
+    transform-origin: left center;
+  }
+
+  .media-terminal {
+    transform: translateY(-50%) scale(0.83);
+    transform-origin: right center;
+  }
+
+}
+
+/* ==================================================
+   SHARED STAGE + PERFORMER
+   Static, responsive, identical sizing logic for every mode.
+================================================== */
+
+.keepsake {
+  --performer-height: clamp(360px, 52vh, 540px);
+  --performer-bottom: clamp(42px, 6vh, 72px);
+
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 138px;
+
+  width: min(790px, 55vw);
+  height: min(570px, 63vh);
+
+  transform: translateX(-50%);
+}
+
+/*
+  Stage always gets the same bounding box.
+  Individual source images preserve their own aspect ratio naturally.
+*/
+.stage {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  object-position: center bottom;
+
+  transform: translateX(-50%);
+
+  image-rendering: pixelated;
+  user-select: none;
+  pointer-events: none;
+}
+
+/*
+  One performer rule for every mode.
+  No per-mode width, height, bottom or animation.
+*/
+.figure-wrap {
+  position: absolute;
+  z-index: 4;
+
+  left: 50%;
+  bottom: var(--performer-bottom);
+
+  height: var(--performer-height);
+  width: min(31vw, 390px);
+
+  transform: translateX(-50%);
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  animation: none !important;
+  transition: none !important;
+}
+
+.figure {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  object-position: center bottom;
+
+  image-rendering: pixelated;
+
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+
+  user-select: none;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------
+   Responsive scaling
+-------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .keepsake {
+    --performer-height: clamp(320px, 48vh, 460px);
+    --performer-bottom: clamp(34px, 5vh, 60px);
+
+    width: min(620px, 57vw);
+  }
+
+  .figure-wrap {
+    width: min(34vw, 340px);
+  }
+}
+
+@media (max-height: 800px) {
+  .keepsake {
+    --performer-height: 48vh;
+    --performer-bottom: 4.5vh;
+  }
+}
+
+/* ==================================================
+   MODE SCENERY
+   Video remains behind scenery.
+   Center stage + performer remain above it.
+================================================== */
+
+.keepsake {
+  z-index: 5;
+}
+
+.stage {
+  z-index: 2;
+}
+
+.figure-wrap {
+  z-index: 4;
+}
+
+/* ==================================================
+   SCENERY COMPOSITION
+   Scenery frames the MV instead of replacing it.
+================================================== */
+
+/* Keep the scenery away from lyrics / mode controls. */
+/* The stage remains clearly above the scenery. */
+.keepsake {
+  z-index: 5;
+}
+
+.stage {
+  z-index: 3;
+}
+
+.figure-wrap {
+  z-index: 4;
+}
+
+/* ==================================================
+   QUAN HỌ SCENERY — CLEAN COMPOSITION
+================================================== */
+
+/* MV + lyrics remain behind the colored scenery. */
+.memory-layer {
+  z-index: 1;
+}
+
+/* Cultural set sits over scenery. */
+.keepsake {
+  z-index: 5;
+}
+
+.stage {
+  z-index: 3;
+}
+
+.figure-wrap {
+  z-index: 4;
+}
+
+/* Quan Họ scenery — final positioning pass */
+.mode-quan-ho /* Quan Họ scenery — viewport fitted */
+.mode-quan-ho /* Quan Họ — lower landscape horizon */
+.mode-quan-ho /* Quan Họ scenery — lower environmental layer */
+.mode-quan-ho /* Quan Họ scenery — preserve transparent sky */
+.mode-quan-ho /* Quan Họ scenery — preserve transparent sky and keep landscape low */
+.mode-quan-ho /* Quan Họ scenery — final visual balance */
+.mode-quan-ho /* Quan Họ scenery — viewport-width landscape */
+.mode-quan-ho /* ==================================================
+   QUAN HO — TRUE FULL-VIEWPORT SCENERY
+   Scenery ignores the centered keepsake width.
+================================================== */
+
+.mode-quan-ho /* Don't let the keepsake crop viewport scenery */
+.mode-quan-ho .keepsake {
+  overflow: visible !important;
+}
+
+/* ==================================================
+   TRUE VIEWPORT SCENERY
+================================================== */
+
+.mode-quan-ho .keepsake {
+  z-index: 5;
+}
+
+/* ==================================================
+   REFERENCE MATCH — DEPTH / BLUR / FOCUS
+================================================== */
+
+/* 1) Background scenery: softer and pushed back */
+.mode-quan-ho /* 2) Keep stage + performer crisp and visually forward */
+.stage,
+.figure {
+  filter: none !important;
+}
+
+.keepsake {
+  filter:
+    drop-shadow(0 14px 18px rgba(0, 0, 0, 0.26));
+}
+
+/* 3) Add a subtle warm focus behind the centerpiece */
+.app::before {
+  content: "";
+  position: fixed;
+  z-index: 3;
+  left: 50%;
+  top: 56%;
+  width: min(760px, 58vw);
+  height: min(520px, 58vh);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(191, 142, 68, 0.12) 0%,
+      rgba(122, 91, 50, 0.06) 34%,
+      transparent 72%
+    );
+}
+
+/* 4) Dark edge vignette like the reference */
+.app::after {
+  content: "";
+  position: fixed;
+  z-index: 12;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 46%,
+      rgba(5, 7, 6, 0.15) 72%,
+      rgba(5, 7, 6, 0.44) 100%
+    );
+}
+
+/* Keep UI above vignette */
+.topbar,
+.mode-picker,
+.mode-dots,
+.timer-zone,
+.dvd-shell,
+.media-terminal,
+.footer {
+  z-index: 20;
+}
+
+/* Stage stays above scenery / warm focus */
+.keepsake {
+  z-index: 10;
+}
+
+/* 5) Side units slightly quieter than centerpiece */
+.dvd-shell,
+.media-terminal {
+  opacity: 0.9;
+  filter:
+    brightness(0.9)
+    saturate(0.78);
+}
+
+/* 6) Lyrics: softer than current pure-white look */
+.lyrics {
+  z-index: 8;
+}
+
+.lyrics strong {
+  color: rgba(235, 235, 229, 0.91);
+  text-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.62),
+    0 0 14px rgba(255, 245, 224, 0.06);
+}
+
+.lyric-old,
+.lyric-next {
+  opacity: 0.48;
+}
+
+/* 7) Slightly warmer timer like reference */
+.timer {
+  color: #e7c374;
+  text-shadow:
+    2px 3px 0 rgba(70, 43, 24, 0.72),
+    0 0 12px rgba(210, 162, 76, 0.12);
+}
+
+/* 8) Give the whole page a very subtle dark base */
+.app {
+  background:
+    linear-gradient(
+      to bottom,
+      #121512 0%,
+      #101310 55%,
+      #0b0e0c 100%
+    );
+}
+
+/* ==================================================
+   SCENERY DEPTH — SOFT TOP / CLEAR BOTTOM
+================================================== */
+
+.scenery-depth {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scenery-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  image-rendering: pixelated;
+}
+
+/* Clear copy becomes stronger toward the river/bottom */
+.scenery-sharp {
+  filter:
+    brightness(0.72)
+    saturate(0.78);
+
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.12) 28%,
+    rgba(0, 0, 0, 0.58) 58%,
+    #000 82%,
+    #000 100%
+  );
+
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.12) 28%,
+    rgba(0, 0, 0, 0.58) 58%,
+    #000 82%,
+    #000 100%
+  );
+}
+
+/* Soft copy dominates toward the trees/top */
+.scenery-blurred {
+  filter:
+    blur(clamp(3px, 0.35vw, 7px))
+    brightness(0.64)
+    saturate(0.70);
+
+  transform: scale(1.015);
+
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    rgba(0, 0, 0, 0.90) 25%,
+    rgba(0, 0, 0, 0.42) 55%,
+    transparent 82%
+  );
+
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    rgba(0, 0, 0, 0.90) 25%,
+    rgba(0, 0, 0, 0.42) 55%,
+    transparent 82%
+  );
+}
+
+
+
+/* ==================================================
+   SCENERY DEPTH
+   Top = softer / blurrier
+   Bottom = progressively sharper
+================================================== */
+
+.scenery-depth {
+  position: fixed;
+  z-index: 2;
+
+  inset: 0;
+
+  width: 100vw;
+  height: 100vh;
+
+  overflow: hidden;
+
+  pointer-events: none;
+  user-select: none;
+}
+
+.scenery-layer {
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100vw;
+  height: auto;
+
+  max-width: none;
+  max-height: none;
+
+  object-fit: contain;
+  object-position: center bottom;
+
+  image-rendering: pixelated;
+
+  pointer-events: none;
+  user-select: none;
+}
+
+/* --------------------------------------------------
+   SHARP LAYER
+   Almost absent at top, fully visible at bottom.
+-------------------------------------------------- */
+
+.scenery-sharp {
+  z-index: 2;
+
+  filter:
+    brightness(0.70)
+    saturate(0.74)
+    contrast(1.02);
+
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 18%,
+    rgba(0, 0, 0, 0.08) 32%,
+    rgba(0, 0, 0, 0.28) 48%,
+    rgba(0, 0, 0, 0.66) 67%,
+    #000 84%,
+    #000 100%
+  );
+
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 18%,
+    rgba(0, 0, 0, 0.08) 32%,
+    rgba(0, 0, 0, 0.28) 48%,
+    rgba(0, 0, 0, 0.66) 67%,
+    #000 84%,
+    #000 100%
+  );
+}
+
+/* --------------------------------------------------
+   BLURRED LAYER
+   Strongest around trees/top, fades toward river.
+-------------------------------------------------- */
+
+.scenery-blurred {
+  z-index: 1;
+
+  filter:
+    blur(clamp(3px, 0.32vw, 6px))
+    brightness(0.62)
+    saturate(0.66)
+    contrast(0.98);
+
+  transform: scale(1.012);
+  transform-origin: center bottom;
+
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 20%,
+    rgba(0, 0, 0, 0.88) 34%,
+    rgba(0, 0, 0, 0.58) 50%,
+    rgba(0, 0, 0, 0.22) 67%,
+    transparent 84%,
+    transparent 100%
+  );
+
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 20%,
+    rgba(0, 0, 0, 0.88) 34%,
+    rgba(0, 0, 0, 0.58) 50%,
+    rgba(0, 0, 0, 0.22) 67%,
+    transparent 84%,
+    transparent 100%
+  );
+}
+
+/* Stage and performer remain fully crisp */
+.keepsake {
+  z-index: 5;
+}
+
+.stage,
+.figure {
+  filter: none !important;
+}
+
+/* ==================================================
+   SCENERY DEPTH — SOFTER / LIGHTER BLUR
+================================================== */
+
+.scenery-blurred {
+  filter:
+    blur(clamp(1.5px, 0.18vw, 3px))
+    brightness(0.66)
+    saturate(0.68)
+    contrast(0.94);
+
+  transform: scale(1.006);
+
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.82) 0%,
+    rgba(0,0,0,0.72) 25%,
+    rgba(0,0,0,0.48) 45%,
+    rgba(0,0,0,0.20) 65%,
+    transparent 82%
+  );
+
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.82) 0%,
+    rgba(0,0,0,0.72) 25%,
+    rgba(0,0,0,0.48) 45%,
+    rgba(0,0,0,0.20) 65%,
+    transparent 82%
+  );
+}
+
+.scenery-sharp {
+  filter:
+    brightness(0.72)
+    saturate(0.72)
+    contrast(0.98);
+
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,0,0,0.10) 30%,
+    rgba(0,0,0,0.34) 50%,
+    rgba(0,0,0,0.72) 70%,
+    #000 88%
+  );
+
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,0,0,0.10) 30%,
+    rgba(0,0,0,0.34) 50%,
+    rgba(0,0,0,0.72) 70%,
+    #000 88%
+  );
+}
+
+/* ==================================================
+   SCENERY — REMOVE DARK OVERLAY
+   Preserve original colors + subtle depth blur
+================================================== */
+
+.scenery-sharp {
+  opacity: 1;
+
+  filter:
+    saturate(0.92)
+    contrast(0.98);
+}
+
+.scenery-blurred {
+  opacity: 1;
+
+  filter:
+    blur(clamp(1px, 0.15vw, 2.5px))
+    saturate(0.90)
+    contrast(0.96);
+
+  transform: scale(1.004);
+}
+
+/* No additional dark treatment on Quan Họ scenery */
+.mode-quan-ho .scenery-layer {
+  opacity: 1;
+}
+
+/* Remove the page vignette that darkens the landscape */
+.app::after {
+  display: none !important;
+}
+
+
+/* ==========================================================
+   SAIGON.EXE — ENVIRONMENT LIGHTING
+
+   One synchronized 20s cycle:
+   night -> dawn -> day -> dusk -> night
+
+   Layer order:
+   memory/video  0
+   halo         1
+   scenery      2
+   stage        5
+========================================================== */
+
+.app {
+  --environment-cycle: 20s;
+
+  position: relative;
+  isolation: isolate;
+}
+
+
+/* ----------------------------------------------------------
+   LAYERS
+---------------------------------------------------------- */
+
+.memory-layer {
+  z-index: 0 !important;
+}
+
+.day-night-light {
+  position: fixed;
+  inset: 0;
+
+  z-index: 1;
+
+  overflow: visible;
+  pointer-events: none;
+}
+
+.scenery-depth {
+  z-index: 2 !important;
+}
+
+.keepsake {
+  z-index: 5 !important;
+}
+
+
+/* ----------------------------------------------------------
+   CENTRAL DAYLIGHT HALO
+---------------------------------------------------------- */
+
+.day-halo {
+  position: absolute;
+
+  left: 50%;
+  top: 42%;
+
+  width: min(150vw, 1900px);
+  aspect-ratio: 1;
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 245, 185, 1) 0%,
+    rgba(255, 223, 130, .90) 10%,
+    rgba(255, 195, 85, .62) 23%,
+    rgba(244, 170, 65, .34) 38%,
+    rgba(225, 145, 50, .15) 52%,
+    rgba(205, 125, 40, .05) 65%,
+    transparent 80%
+  );
+
+  filter: blur(24px);
+
+  transform:
+    translate(-50%, -50%)
+    scale(.18);
+
+  opacity: .10;
+
+  animation:
+    environment-halo
+    var(--environment-cycle)
+    ease-in-out
+    infinite;
+
+  will-change: transform, opacity;
+}
+
+
+@keyframes environment-halo {
+  /* NIGHT */
+  0%,
+  100% {
+    transform:
+      translate(-50%, -50%)
+      scale(.18);
+
+    opacity: .10;
+  }
+
+  /* DAWN */
+  25% {
+    transform:
+      translate(-50%, -50%)
+      scale(.55);
+
+    opacity: .55;
+  }
+
+  /* DAY */
+  50% {
+    transform:
+      translate(-50%, -50%)
+      scale(1);
+
+    opacity: 1;
+  }
+
+  /* DUSK */
+  75% {
+    transform:
+      translate(-50%, -50%)
+      scale(.55);
+
+    opacity: .55;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   SCENERY
+---------------------------------------------------------- */
+
+.scenery-layer {
+  animation:
+    environment-scenery
+    var(--environment-cycle)
+    ease-in-out
+    infinite;
+}
+
+
+/* Upper/distant copy keeps the intentional blur. */
+.scenery-blurred {
+  animation:
+    environment-scenery-blurred
+    var(--environment-cycle)
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes environment-scenery {
+  0%,
+  100% {
+    filter:
+      brightness(.52)
+      saturate(.68)
+      contrast(.96);
+  }
+
+  25%,
+  75% {
+    filter:
+      brightness(.82)
+      saturate(.88)
+      contrast(.98);
+  }
+
+  50% {
+    filter:
+      brightness(1.28)
+      saturate(1.06)
+      contrast(.98);
+  }
+}
+
+
+@keyframes environment-scenery-blurred {
+  0%,
+  100% {
+    filter:
+      blur(2.4px)
+      brightness(.52)
+      saturate(.68)
+      contrast(.96);
+  }
+
+  25%,
+  75% {
+    filter:
+      blur(2.4px)
+      brightness(.82)
+      saturate(.88)
+      contrast(.98);
+  }
+
+  50% {
+    filter:
+      blur(2.4px)
+      brightness(1.28)
+      saturate(1.06)
+      contrast(.98);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   STAGE
+---------------------------------------------------------- */
+
+.stage {
+  animation:
+    environment-stage
+    var(--environment-cycle)
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes environment-stage {
+  0%,
+  100% {
+    filter:
+      brightness(.60)
+      saturate(.72)
+      contrast(.96);
+  }
+
+  25%,
+  75% {
+    filter:
+      brightness(.82)
+      saturate(.88)
+      contrast(.98);
+  }
+
+  50% {
+    filter:
+      brightness(1.14)
+      saturate(1.02)
+      contrast(1);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   FIGURE
+---------------------------------------------------------- */
+
+.figure {
+  animation:
+    environment-figure
+    var(--environment-cycle)
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes environment-figure {
+  0%,
+  100% {
+    filter:
+      brightness(.68)
+      saturate(.78)
+      contrast(.97);
+  }
+
+  25%,
+  75% {
+    filter:
+      brightness(.86)
+      saturate(.90)
+      contrast(.99);
+  }
+
+  50% {
+    filter:
+      brightness(1.10)
+      saturate(1)
+      contrast(1);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   ACCESSIBILITY
+---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .day-halo,
+  .scenery-layer,
+  .scenery-blurred,
+  .stage,
+  .figure {
+    animation: none;
+  }
+}
+
+
+/* ==========================================================
+   TIMER-DRIVEN ENVIRONMENT
+   Timer start = complete night
+   Timer end   = peak daylight
+========================================================== */
+
+.day-halo,
+.scenery-layer,
+.scenery-blurred,
+.stage,
+.figure {
+  animation: none !important;
+}
+
+
+/* ----------------------------------------------------------
+   HALO
+---------------------------------------------------------- */
+
+.day-halo {
+  /*
+    Progress:
+      0 = .18
+      1 = 1.00
+  */
+  transform:
+    translate(-50%, -50%)
+    scale(calc(.18 + var(--environment-progress) * .82));
+
+  opacity:
+    calc(.04 + var(--environment-progress) * .96);
+
+  transition:
+    transform 1s linear,
+    opacity 1s linear;
+}
+
+
+/* ----------------------------------------------------------
+   SCENERY — CLEAR LOWER COPY
+---------------------------------------------------------- */
+
+.scenery-layer {
+  filter:
+    brightness(calc(.48 + var(--environment-progress) * .80))
+    saturate(calc(.65 + var(--environment-progress) * .41))
+    contrast(.98);
+
+  transition: filter 1s linear;
+}
+
+
+/* ----------------------------------------------------------
+   SCENERY — BLURRED TREES
+---------------------------------------------------------- */
+
+.scenery-blurred {
+  filter:
+    blur(2.4px)
+    brightness(calc(.48 + var(--environment-progress) * .80))
+    saturate(calc(.65 + var(--environment-progress) * .41))
+    contrast(.98);
+
+  transition: filter 1s linear;
+}
+
+
+/* ----------------------------------------------------------
+   STAGE
+---------------------------------------------------------- */
+
+.stage {
+  filter:
+    brightness(calc(.58 + var(--environment-progress) * .56))
+    saturate(calc(.72 + var(--environment-progress) * .30))
+    contrast(.99);
+
+  transition: filter 1s linear;
+}
+
+
+/* ----------------------------------------------------------
+   FIGURE
+---------------------------------------------------------- */
+
+.figure {
+  filter:
+    brightness(calc(.66 + var(--environment-progress) * .44))
+    saturate(calc(.78 + var(--environment-progress) * .22))
+    contrast(.99);
+
+  transition: filter 1s linear;
+}
+
+
+/* ==========================================================
+   CUSTOM TIMER INPUT
+========================================================== */
+
+.timer-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  text-align: center;
+  font: inherit;
+  color: inherit;
+
+  background: transparent;
+  outline: none;
+}
+
+.timer-input::-webkit-inner-spin-button,
+.timer-input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+
+/* ==========================================================
+   TIMER — DIRECT DURATION CONTROL
+========================================================== */
+
+.timer-edit-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.timer-input {
+  width: 72px !important;
+
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  text-align: center;
+  font: inherit;
+  color: inherit;
+
+  background: transparent;
+  outline: none;
+  cursor: text;
+}
+
+.timer-input:focus {
+  border-color: var(--gold);
+}
+
+.timer-input::-webkit-inner-spin-button,
+.timer-input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.timer-unit {
+  color: rgba(240, 223, 177, .55);
+  font-size: 7px;
+  letter-spacing: .12em;
+}
+
+.timer-set {
+  padding: 3px 6px;
+  border: 1px solid rgba(224, 192, 121, .35);
+  background: rgba(18, 24, 19, .66);
+  color: var(--cream-dim);
+  font-size: 7px;
+}
+
+.timer-set:hover {
+  color: var(--cream);
+  border-color: var(--gold);
+}
+
+
+/* ==========================================================
+   TIMER — MINIMAL PIXEL EDITOR
+========================================================== */
+
+.timer-edit-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+
+  margin-top: 2px;
+}
+
+/* number itself should look like the timer, not a form field */
+.timer-input {
+  width: 86px !important;
+  padding: 0 !important;
+
+  border: 0 !important;
+  border-bottom: 1px solid rgba(224, 192, 121, 0.22) !important;
+
+  background: transparent !important;
+  outline: none !important;
+
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  text-align: center;
+
+  color: #e7c374 !important;
+  font: inherit !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+
+  text-shadow:
+    2px 3px 0 rgba(70, 43, 24, 0.72);
+
+  cursor: text;
+}
+
+.timer-input:focus {
+  border-bottom-color: rgba(231, 195, 116, 0.72) !important;
+}
+
+.timer-input::-webkit-inner-spin-button,
+.timer-input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* remove the awkward standalone MIN */
+.timer-unit {
+  display: none;
+}
+
+/* SET becomes a tiny understated pixel action */
+.timer-set {
+  min-width: 0 !important;
+  padding: 2px 5px !important;
+
+  border: 0 !important;
+  border-bottom: 1px solid rgba(224, 192, 121, 0.28) !important;
+
+  background: transparent !important;
+
+  color: rgba(231, 195, 116, 0.58) !important;
+
+  font-size: 6px !important;
+  letter-spacing: 0.12em;
+
+  cursor: pointer;
+}
+
+.timer-set:hover {
+  color: #e7c374 !important;
+  border-bottom-color: #e7c374 !important;
+}
+
+/* actions should stay compact beneath the timer */
+.timer-actions {
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.timer-actions button {
+  min-width: 72px;
+  padding: 4px 10px;
+}
+
+/* session/status spacing */
+.session-label {
+  margin-bottom: 4px;
+}
+
+.timer-status {
+  margin-top: 6px;
+}
+
+/* ==========================================================
+   TIMER — HH : MM : SS
+========================================================== */
+
+.timer-edit-wrap {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 7px;
+  margin: 5px 0 3px;
+}
+
+.time-field {
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  align-items: center;
+  gap: 4px;
 }
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
+.timer-part {
+  width: 34px;
   padding: 0;
+
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  border: 0;
+  border-bottom: 1px solid rgba(231, 195, 116, .28);
+  outline: 0;
+  background: transparent;
+
+  color: #e7c374;
+  font: inherit;
+  font-size: 16px;
+  text-align: center;
+
+  text-shadow: 1px 2px 0 rgba(60, 40, 20, .6);
+}
+
+.timer-part:focus {
+  border-bottom-color: #e7c374;
+}
+
+.timer-part::-webkit-inner-spin-button,
+.timer-part::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.time-field > span {
+  font-size: 5px;
+  letter-spacing: .16em;
+  color: rgba(231, 195, 116, .45);
+}
+
+.timer-colon {
+  margin-top: -1px;
+  color: #e7c374;
+  font-size: 17px;
+}
+
+.timer-set {
+  align-self: flex-start;
+  margin: 2px 0 0 5px !important;
+  padding: 2px 5px !important;
+
+  border: 0 !important;
+  border-bottom: 1px solid rgba(231,195,116,.3) !important;
+  background: transparent !important;
+
+  color: rgba(231,195,116,.55) !important;
+  font-size: 6px !important;
+  letter-spacing: .12em;
+}
+
+.timer-set:hover {
+  color: #e7c374 !important;
+}
+
+
+/* ==========================================================
+   TIMER — LARGE CONSISTENT HH : MM : SS
+========================================================== */
+
+.timer-edit-wrap,
+.timer-running {
   display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
 
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
+  min-height: 58px;
+  margin: 7px 0 5px;
 }
 
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
+/* Running timer should visually disappear as a button */
+.timer-running {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
 }
 
-.ticks {
+
+/* ----- numbers ----- */
+
+.timer-part,
+.timer-running .time-field strong {
+  display: block;
+
+  width: 58px;
+
+  color: #e7c374;
+
+  font-family: inherit;
+  font-size: clamp(26px, 2.4vw, 38px);
+  font-weight: 700;
+  line-height: .95;
+  text-align: center;
+
+  letter-spacing: .04em;
+
+  text-shadow:
+    2px 3px 0 rgba(70, 43, 24, .72);
+}
+
+
+/* Editable fields */
+.timer-part {
+  padding: 0 0 4px;
+
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  border: 0;
+  border-bottom: 1px solid rgba(231, 195, 116, .25);
+  outline: 0;
+  background: transparent;
+}
+
+.timer-part:focus {
+  border-bottom-color: rgba(231, 195, 116, .85);
+}
+
+.timer-part::-webkit-inner-spin-button,
+.timer-part::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+
+/* ----- HH / MM / SS labels ----- */
+
+.time-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.time-field > span {
+  color: rgba(231, 195, 116, .52);
+
+  font-size: 6px;
+  line-height: 1;
+  letter-spacing: .20em;
+}
+
+
+/* ----- colons ----- */
+
+.timer-colon {
+  margin-top: -2px;
+
+  color: #e7c374;
+
+  font-size: clamp(25px, 2.2vw, 35px);
+  line-height: .95;
+
+  text-shadow:
+    2px 3px 0 rgba(70, 43, 24, .55);
+}
+
+
+/* ----- SET ----- */
+
+.timer-set {
+  align-self: flex-start;
+
+  margin: 8px 0 0 6px !important;
+  padding: 3px 6px !important;
+
+  border: 0 !important;
+  border-bottom: 1px solid rgba(231, 195, 116, .30) !important;
+  background: transparent !important;
+
+  color: rgba(231, 195, 116, .58) !important;
+
+  font-size: 6px !important;
+  letter-spacing: .14em;
+}
+
+.timer-set:hover {
+  color: #e7c374 !important;
+  border-bottom-color: #e7c374 !important;
+}
+
+
+/* ==========================================================
+   TIMER TYPOGRAPHY — FINAL SCALE
+========================================================== */
+
+/* HR / MIN / SEC */
+.time-field > span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  opacity: 0.9;
+}
+
+/* SET */
+.timer-set {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  padding: 5px 9px !important;
+  margin-top: 5px !important;
+}
+
+/* TẠM NGHỈ / ĐANG TẬP TRUNG */
+.timer-status {
+  font-size: 10px !important;
+  font-weight: 700;
+  letter-spacing: 0.24em !important;
+  margin-top: 14px;
+}
+
+/* START / PAUSE / RESET */
+.timer-actions button {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* compensate for removed session label */
+.timer-zone {
+  gap: 5px;
+}
+
+
+/* ==========================================================
+   TIMER — CENTER + VERTICAL BREATHING ROOM
+========================================================== */
+
+.timer-zone {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+
+  /* move entire timer away from stage */
+  padding-top: 28px;
+
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* HH : MM : SS row */
+.timer-edit-wrap,
+.timer-running {
   position: relative;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  width: 100%;
+  max-width: 430px;
+  min-height: 72px;
+
+  margin: 0 auto;
+  gap: 14px;
+}
+
+/* Each number/label column */
+.time-field {
+  width: 76px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+
+  text-align: center;
+}
+
+/* Editable number */
+.timer-part {
+  width: 76px !important;
+  margin: 0 !important;
+
+  text-align: center !important;
+  box-sizing: border-box;
+}
+
+/* Running number */
+.timer-running .time-field strong {
+  width: 76px;
+  text-align: center;
+}
+
+/* Colons stay centered between number columns */
+.timer-colon {
+  width: 16px;
+  flex: 0 0 16px;
+
+  margin: 0;
+  text-align: center;
+}
+
+/* SET must not affect centering of HH:MM:SS */
+.timer-set {
+  position: absolute;
+
+  left: calc(50% + 184px);
+  top: 5px;
+
+  margin: 0 !important;
+}
+
+/* status centered under timer */
+.timer-status {
+  display: block;
   width: 100%;
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+  margin: 18px auto 0 !important;
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
+  text-align: center;
+}
+
+/* buttons centered as one group */
+.timer-actions {
+  width: 100%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  gap: 16px;
+  margin: 14px auto 0;
+}
+
+.timer-actions button {
+  width: 145px;
+  margin: 0 !important;
+
+  text-align: center;
+}
+
+/* ==========================================================
+   TIMER — STABLE CENTERED LAYOUT
+========================================================== */
+
+/* Do NOT change timer-zone's page positioning */
+.timer-zone {
+  text-align: center !important;
+  padding-top: 26px !important;
+}
+
+/* timer row */
+.timer-edit-wrap,
+.timer-running {
+  position: relative !important;
+
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+
+  width: fit-content !important;
+  min-width: 0 !important;
+
+  margin: 0 auto !important;
+  gap: 12px !important;
+}
+
+/* individual units */
+.time-field {
+  width: 68px !important;
+  flex: 0 0 68px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+
+  text-align: center !important;
+}
+
+.timer-part,
+.timer-running .time-field strong {
+  width: 68px !important;
+  box-sizing: border-box !important;
+
+  font-size: 34px !important;
+  line-height: 1 !important;
+
+  text-align: center !important;
+}
+
+/* labels */
+.time-field > span {
+  margin-top: 8px !important;
+
+  font-size: 9px !important;
+  letter-spacing: .18em !important;
+
+  text-align: center !important;
+}
+
+/* colons */
+.timer-colon {
+  width: 12px !important;
+  flex: 0 0 12px !important;
+
+  margin: 0 !important;
+
+  font-size: 32px !important;
+  line-height: 1 !important;
+
+  text-align: center !important;
+}
+
+/* SET stays attached without affecting row centering */
+.timer-set {
+  position: absolute !important;
+
+  left: 100% !important;
+  top: 5px !important;
+
+  margin-left: 14px !important;
+
+  white-space: nowrap;
+}
+
+/* status */
+.timer-status {
+  display: block !important;
+
+  width: 100% !important;
+  margin: 20px auto 0 !important;
+
+  font-size: 10px !important;
+  text-align: center !important;
+}
+
+/* controls */
+.timer-actions {
+  width: 100% !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 14px !important;
+  margin: 14px auto 0 !important;
+}
+
+.timer-actions button {
+  width: 140px !important;
+  margin: 0 !important;
+
+  text-align: center !important;
+}
+
+
+/* ==========================================================
+   TIMER — SAFE FINAL SPACING + SCALE
+   Preserve timer-zone positioning.
+========================================================== */
+
+/* Move only the contents downward */
+.timer-edit-wrap,
+.timer-running {
+  transform: translateY(32px) !important;
+
+  gap: 15px !important;
+}
+
+/* Bigger time columns */
+.time-field {
+  width: 78px !important;
+  flex: 0 0 78px !important;
+}
+
+/* Bigger HH / MM / SS values */
+.timer-part,
+.timer-running .time-field strong {
+  width: 78px !important;
+
+  font-size: 40px !important;
+  line-height: 1 !important;
+
+  text-align: center !important;
+}
+
+/* Bigger colons */
+.timer-colon {
+  width: 15px !important;
+  flex: 0 0 15px !important;
+
+  font-size: 38px !important;
+  line-height: 1 !important;
+}
+
+/* Larger labels */
+.time-field > span {
+  margin-top: 10px !important;
+
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: .20em !important;
+}
+
+/* Keep SET attached to right side of timer */
+.timer-set {
+  left: 100% !important;
+  top: 9px !important;
+
+  margin-left: 16px !important;
+
+  font-size: 9px !important;
+}
+
+/*
+  Since timer row moved down 32px,
+  move status/buttons down with it.
+*/
+.timer-status {
+  transform: translateY(32px) !important;
+
+  margin-top: 24px !important;
+
+  font-size: 11px !important;
+  text-align: center !important;
+}
+
+.timer-actions {
+  transform: translateY(32px) !important;
+
+  margin-top: 18px !important;
+
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+.timer-actions button {
+  width: 150px !important;
+  min-width: 150px !important;
+
+  padding: 6px 10px !important;
+
+  font-size: 10px !important;
+  text-align: center !important;
+}
+
+
+/* TIMER — tighten vertical grouping */
+.timer-status {
+  margin-top: 10px !important;
+  transform: translateY(22px) !important;
+}
+
+.timer-actions {
+  margin-top: 8px !important;
+  transform: translateY(22px) !important;
+}
+
+/* keep buttons centered and close together */
+.timer-actions {
+  gap: 12px !important;
+}
+
+
+
+/* SET removed — START commits the entered duration */
+.timer-set {
+  display: none !important;
+}
+
+/* ========================================
+   TIMER POLISH
+   ======================================== */
+
+/* No status line taking up vertical space */
+.timer-status {
+  display: none !important;
+}
+
+/* Pull controls closer to the clock */
+.timer-actions {
+  margin-top: 12px !important;
+  transform: none !important;
+  gap: 12px !important;
+}
+
+/* Soft warm glow around timer numerals */
+.timer,
+.timer input,
+.timer-display,
+.timer-unit input {
+  color: #e9bd62 !important;
+  text-shadow:
+    0 0 5px rgba(232, 184, 82, 0.42),
+    0 0 12px rgba(205, 145, 42, 0.18) !important;
+}
+
+/* Subtle illuminated control borders */
+.timer-actions button {
+  border-color: rgba(224, 180, 82, 0.58) !important;
+  color: #e5bd69 !important;
+  box-shadow:
+    0 0 5px rgba(220, 169, 62, 0.18),
+    inset 0 0 8px rgba(220, 169, 62, 0.035) !important;
+  text-shadow:
+    0 0 5px rgba(232, 184, 82, 0.32) !important;
+}
+
+/* Slightly stronger glow on interaction */
+.timer-actions button:hover,
+.timer-actions button:focus-visible {
+  border-color: rgba(244, 202, 105, 0.85) !important;
+  box-shadow:
+    0 0 8px rgba(230, 177, 65, 0.32),
+    0 0 18px rgba(207, 146, 39, 0.12),
+    inset 0 0 10px rgba(230, 177, 65, 0.07) !important;
+}
+
+
+/* ==========================================================
+   SINGLE MEDIA PLAYER
+========================================================== */
+
+.media-terminal {
+  display: none !important;
+}
+
+/* left player is now the only media controller */
+.dvd-shell {
+  z-index: 8;
+}
+
+
+/* ==========================================================
+   SKY MEDIA
+   queued posters / videos will render here
+========================================================== */
+
+.sky-media {
+  position: fixed;
+  inset: 46px 0 auto 0;
+  height: 48vh;
+
+  z-index: 0;
+
+  overflow: hidden;
+  pointer-events: none;
+
+  opacity: .28;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.85) 0%,
+      rgba(0,0,0,.72) 45%,
+      rgba(0,0,0,.28) 75%,
+      transparent 100%
+    );
+
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.85) 0%,
+      rgba(0,0,0,.72) 45%,
+      rgba(0,0,0,.28) 75%,
+      transparent 100%
+    );
+}
+
+.sky-media img,
+.sky-media video {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  filter:
+    grayscale(1)
+    contrast(.82)
+    brightness(.72)
+    blur(1px);
+
+  opacity: .75;
+}
+
+/* temporary empty state */
+.sky-media-placeholder {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+
+/* ==========================================================
+   TIMER — FIX LABEL / BUTTON COLLISION
+========================================================== */
+
+.timer-edit-wrap,
+.timer-running {
+  transform: none !important;
+  margin-bottom: 0 !important;
+}
+
+/* keep labels directly under their numbers */
+.time-field {
+  position: relative;
+}
+
+.time-field > span {
+  display: block !important;
+  margin-top: 10px !important;
+  position: static !important;
+
+  font-size: 9px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+/* give the HH:MM:SS block enough height for labels */
+.timer-edit-wrap,
+.timer-running {
+  min-height: 78px !important;
+}
+
+/* buttons sit BELOW HR / MIN / SEC */
+.timer-actions {
+  transform: none !important;
+  margin-top: 10px !important;
+
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+
+  gap: 12px !important;
+}
+
+/* keep controls compact */
+.timer-actions button {
+  width: 145px !important;
+  min-width: 145px !important;
+  height: 34px !important;
+
+  margin: 0 !important;
+  padding: 0 12px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* status is already removed; ensure it occupies no space */
+.timer-status {
+  display: none !important;
+  margin: 0 !important;
+}
+
+
+/* Move entire timer assembly slightly lower */
+.timer-zone {
+  transform: translateY(24px) !important;
+}
+
+
+/* FINAL timer positioning — centered, slightly lower */
+.timer-zone {
+  position: absolute !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: 12px !important;
+  top: auto !important;
+
+  width: min(620px, 90vw) !important;
+  margin: 0 !important;
+
+  transform: translateX(-50%) !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+
+/* ==========================================================
+   SAIGON.EXE — PIXEL MP4 PLAYER
+========================================================== */
+
+.dvd-shell {
+  display: none !important;
+}
+
+.pixel-player {
+  position: absolute;
+  z-index: 20;
+
+  left: 3.2%;
+  top: 50%;
+
+  width: min(300px, 21vw);
+
+  transform: translateY(-48%);
+
+  border: 3px solid #292b28;
+  outline: 1px solid rgba(225, 195, 118, .35);
+
+  background: #bbb6a7;
+
+  box-shadow:
+    5px 5px 0 rgba(0, 0, 0, .38),
+    inset 0 0 0 2px rgba(255, 248, 219, .28);
+
+  color: #272823;
+
+  image-rendering: pixelated;
+}
+
+
+/* ---------- header ---------- */
+
+.pixel-player-header {
+  height: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 8px;
+
+  border-bottom: 3px solid #34352f;
+
+  background: #a7a18f;
+
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+
+/* ---------- LCD ---------- */
+
+.pixel-player-screen {
+  margin: 9px;
+  padding: 10px;
+
+  min-height: 112px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  border:
+    4px inset #585b51;
+
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 3px,
+      rgba(115, 210, 150, .035) 4px
+    ),
+    #10251d;
+
+  color: #79b48a;
+
+  box-shadow:
+    inset 0 0 14px rgba(74, 159, 106, .11);
+
+  font-size: 7px;
+}
+
+.player-screen-top {
+  display: flex;
+  justify-content: space-between;
+
+  color: rgba(128, 198, 147, .67);
+
+  font-size: 6px;
+  letter-spacing: .1em;
+}
+
+.pixel-player-screen strong {
+  margin-top: 3px;
+
+  color: #c6db9c;
+
+  font-size: 12px;
+  letter-spacing: .06em;
+}
+
+.player-progress {
+  height: 14px;
+
+  display: flex;
+  align-items: end;
+  gap: 2px;
+
+  margin-top: 4px;
+}
+
+.player-progress i {
+  width: 3px;
+  height: 5px;
+
+  display: block;
+
+  background: #6ea87d;
+}
+
+.player-progress i:nth-child(2n) {
+  height: 9px;
+}
+
+.player-progress i:nth-child(3n) {
+  height: 12px;
+}
+
+.player-time {
+  display: flex;
+  justify-content: space-between;
+
+  color: rgba(139, 181, 123, .66);
+  font-size: 6px;
+}
+
+
+/* ==========================================================
+   CLICK WHEEL
+========================================================== */
+
+.click-wheel {
+  position: relative;
+
+  width: 142px;
+  height: 142px;
+
+  margin: 12px auto 14px;
+
+  border: 5px solid #30312e;
+  border-radius: 50%;
+
+  background: #3a3b37;
+
+  box-shadow:
+    inset 0 0 0 5px #8e8b7e,
+    0 3px 0 rgba(0,0,0,.26);
+}
+
+.click-wheel button {
+  position: absolute;
+
+  border: 0;
+  background: transparent;
+
+  color: #ece8d9;
+
+  font-family: inherit;
+  font-size: 7px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.click-wheel button:hover {
+  color: #d9bd69;
+}
+
+.wheel-top {
+  left: 50%;
+  top: 13px;
+
+  transform: translateX(-50%);
+}
+
+.wheel-bottom {
+  left: 50%;
+  bottom: 13px;
+
+  transform: translateX(-50%);
+}
+
+.wheel-left {
+  left: 13px;
+  top: 50%;
+
+  transform: translateY(-50%);
+}
+
+.wheel-right {
+  right: 13px;
+  top: 50%;
+
+  transform: translateY(-50%);
+}
+
+.wheel-center {
+  left: 50%;
+  top: 50%;
+
+  width: 54px;
+  height: 54px;
+
+  transform: translate(-50%, -50%);
+
+  border: 3px solid #292a27 !important;
+  border-radius: 50% !important;
+
+  background: #eeeade !important;
+
+  color: #282925 !important;
+
+  font-size: 12px !important;
+
+  box-shadow:
+    inset 0 0 0 2px #aaa699;
+}
+
+
+/* ==========================================================
+   QUEUE + RECOMMENDATIONS
+========================================================== */
+
+.player-queue,
+.player-recs {
+  border-top: 2px solid #565345;
+
+  padding: 7px;
+
+  display: grid;
+  gap: 3px;
+}
+
+.player-section-title {
+  display: flex;
+  justify-content: space-between;
+
+  padding: 2px 3px 5px;
+
+  color: #4b493d;
+
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.player-track,
+.player-rec {
+  min-width: 0;
+
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 5px;
+
+  padding: 5px 6px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #37362f;
+
+  font-family: inherit;
+  font-size: 6px;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.player-track strong,
+.player-rec strong {
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 6px;
+  font-weight: 700;
+}
+
+.player-track.active {
+  background: #465b48;
+  color: #eee0af;
+}
+
+.player-track:hover,
+.player-rec:hover {
+  background: rgba(67, 83, 67, .17);
+}
+
+
+/* recommendations slightly greener */
+.player-recs {
+  background: rgba(39, 54, 42, .08);
+}
+
+.player-rec > span {
+  color: #677b55;
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width: 1100px) {
+  .pixel-player {
+    transform:
+      translateY(-48%)
+      scale(.84);
+
+    transform-origin: left center;
   }
 }
+
+/* ==========================================================
+   MINIMAL Y2K PLAYER + WIRED EARPHONES
+========================================================== */
+
+/* make player noticeably smaller */
+.pixel-player {
+  width: min(235px, 16vw) !important;
+
+  left: 3.4% !important;
+  top: 51% !important;
+
+  transform: translateY(-50%) !important;
+
+  border-width: 2px !important;
+
+  box-shadow:
+    3px 3px 0 rgba(0, 0, 0, .34),
+    inset 0 0 0 1px rgba(255, 248, 219, .20) !important;
+}
+
+
+/* smaller LCD */
+.pixel-player-screen {
+  margin: 7px !important;
+  padding: 8px !important;
+
+  min-height: 82px !important;
+
+  border-width: 3px !important;
+}
+
+
+/* slightly smaller click wheel */
+.click-wheel {
+  width: 104px !important;
+  height: 104px !important;
+
+  margin: 9px auto 10px !important;
+
+  border-width: 4px !important;
+}
+
+.wheel-center {
+  width: 40px !important;
+  height: 40px !important;
+
+  border-width: 2px !important;
+}
+
+
+/* tighter queue/recs */
+.player-queue,
+.player-recs {
+  padding: 5px !important;
+}
+
+.player-track,
+.player-rec {
+  padding: 4px 5px !important;
+}
+
+
+/* ==========================================================
+   EARPHONE CANVAS
+========================================================== */
+
+.wired-earphones {
+  position: fixed;
+  inset: 0;
+
+  z-index: 18;
+
+  overflow: hidden;
+  pointer-events: none;
+
+  --earphone-white: #e8e4d9;
+  --earphone-edge: rgba(72, 72, 66, .82);
+}
+
+
+/* ==========================================================
+   MAIN CABLE
+   exits from player and follows bottom edge
+========================================================== */
+
+.cable-from-player {
+  position: absolute;
+
+  left: calc(3.4% + min(117px, 8vw));
+  top: 72%;
+
+  width: 77vw;
+  height: 19vh;
+
+  border-left: 2px solid var(--earphone-white);
+  border-bottom: 2px solid var(--earphone-white);
+
+  border-radius: 0 0 0 52px;
+
+  opacity: .82;
+
+  filter:
+    drop-shadow(1px 1px 0 var(--earphone-edge));
+}
+
+
+/* small inline splitter */
+.earphone-split {
+  position: absolute;
+
+  right: 14vw;
+  bottom: 7.5vh;
+
+  width: 12px;
+  height: 5px;
+
+  border: 1px solid #79766f;
+
+  background: #ddd9ce;
+
+  box-shadow: 1px 1px 0 rgba(0,0,0,.38);
+}
+
+
+/* ==========================================================
+   BUD WIRES
+========================================================== */
+
+.cable-left-bud,
+.cable-right-bud {
+  position: absolute;
+
+  bottom: 8vh;
+
+  width: 2px;
+
+  background: var(--earphone-white);
+
+  transform-origin: bottom center;
+
+  opacity: .82;
+
+  filter:
+    drop-shadow(1px 0 0 var(--earphone-edge));
+
+  transition:
+    right 700ms cubic-bezier(.7, 0, .3, 1),
+    transform 700ms cubic-bezier(.7, 0, .3, 1);
+}
+
+
+.cable-left-bud {
+  right: 15vw;
+
+  height: 30vh;
+
+  transform: rotate(5deg);
+}
+
+
+.cable-right-bud {
+  right: 10vw;
+
+  height: 24vh;
+
+  transform: rotate(-5deg);
+}
+
+
+/* ==========================================================
+   SMALL MINIMAL EARBUD
+========================================================== */
+
+.earbud {
+  position: absolute;
+
+  width: 20px;
+  height: 30px;
+
+  transition:
+    right 700ms cubic-bezier(.7, 0, .3, 1),
+    transform 700ms cubic-bezier(.7, 0, .3, 1);
+
+  filter:
+    drop-shadow(1px 1px 0 rgba(0,0,0,.45));
+}
+
+
+/* rounded speaker head */
+.earbud::before {
+  content: "";
+
+  position: absolute;
+
+  width: 17px;
+  height: 17px;
+
+  left: 1px;
+  top: 0;
+
+  border: 2px solid #77746d;
+
+  border-radius: 45%;
+
+  background:
+    radial-gradient(
+      circle at 45% 45%,
+      #73716b 0 1px,
+      #eeeae0 2px 6px,
+      #d0ccc2 7px 100%
+    );
+}
+
+
+/* narrow stem */
+.earbud::after {
+  content: "";
+
+  position: absolute;
+
+  left: 7px;
+  top: 16px;
+
+  width: 6px;
+  height: 14px;
+
+  border-left: 2px solid #77746d;
+  border-right: 2px solid #77746d;
+
+  background: #e5e1d7;
+}
+
+
+/* remove old fake speaker-dot element */
+.earbud i {
+  display: none;
+}
+
+
+/* ==========================================================
+   PAUSED — DEFAULT COMPOSITION
+========================================================== */
+
+.earphones-paused .earbud-left {
+  right: 14.4vw;
+  top: 43%;
+
+  transform: rotate(-5deg);
+}
+
+.earphones-paused .earbud-right {
+  right: 8.9vw;
+  top: 49%;
+
+  transform: rotate(5deg);
+}
+
+
+/* ==========================================================
+   PLAYING — BUDS LEAVE SCREEN
+========================================================== */
+
+.earphones-playing .earbud-left {
+  right: -32px;
+  top: 43%;
+
+  transform: rotate(8deg);
+}
+
+.earphones-playing .earbud-right {
+  right: -58px;
+  top: 49%;
+
+  transform: rotate(10deg);
+}
+
+
+/* wires continue toward edge */
+.earphones-playing .cable-left-bud {
+  right: -8px;
+
+  transform: rotate(12deg);
+}
+
+.earphones-playing .cable-right-bud {
+  right: -24px;
+
+  transform: rotate(14deg);
+}
+
+
+/* main wire should visually exit the viewport */
+.earphones-playing .cable-from-player {
+  width: 102vw;
+}
+
+
+/* ==========================================================
+   SMALLER VIEWPORTS
+========================================================== */
+
+@media (max-width: 1100px) {
+  .pixel-player {
+    width: 205px !important;
+
+    transform:
+      translateY(-50%)
+      scale(.9) !important;
+
+    transform-origin: left center;
+  }
+
+  .earbud {
+    scale: .85;
+  }
+}
+
+
+/* ==========================================================
+   PIXEL PLAYER — ART SHELL
+========================================================== */
+
+.pixel-player {
+  position: absolute !important;
+  z-index: 20 !important;
+
+  left: 3.5% !important;
+  top: 50% !important;
+
+  width: clamp(175px, 15vw, 225px) !important;
+  height: 430px !important;
+
+  transform: translateY(-48%) !important;
+
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  overflow: visible !important;
+}
+
+
+/* Physical PNG object */
+.player-shell-art {
+  position: absolute;
+  z-index: 0;
+
+  left: 50%;
+  top: 0;
+
+  width: 250px;
+  height: auto;
+
+  transform: translateX(-50%);
+
+  object-fit: contain;
+  image-rendering: pixelated;
+
+  pointer-events: none;
+  user-select: none;
+}
+
+
+/* Old fake casing header is already drawn into the PNG */
+.pixel-player-header {
+  display: none !important;
+}
+
+
+/* ==========================================================
+   REAL LCD CONTENT
+   covers the fake screen content in the PNG
+========================================================== */
+
+.pixel-player-screen {
+  position: absolute !important;
+  z-index: 3 !important;
+
+  top: 45px !important;
+  left: 50% !important;
+
+  width: 178px !important;
+  min-height: 105px !important;
+
+  margin: 0 !important;
+  padding: 9px 10px !important;
+
+  transform: translateX(-50%) !important;
+
+  box-sizing: border-box;
+
+  border: 0 !important;
+
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 3px,
+      rgba(120, 210, 145, .035) 4px
+    ),
+    #10251d !important;
+
+  box-shadow:
+    inset 0 0 8px rgba(100, 190, 125, .10) !important;
+
+  color: #83b98c !important;
+}
+
+
+/* ==========================================================
+   FUNCTIONAL CLICK WHEEL
+   transparent hit areas over artwork
+========================================================== */
+
+.click-wheel {
+  position: absolute !important;
+  z-index: 4 !important;
+
+  left: 50% !important;
+  top: 176px !important;
+
+  width: 138px !important;
+  height: 138px !important;
+
+  margin: 0 !important;
+
+  transform: translateX(-50%) !important;
+
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+/* PNG provides wheel appearance */
+.click-wheel button {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+
+  color: transparent !important;
+
+  cursor: pointer;
+}
+
+
+/* Invisible but generous click targets */
+.wheel-top {
+  width: 64px;
+  height: 35px;
+
+  top: 4px !important;
+}
+
+.wheel-bottom {
+  width: 64px;
+  height: 35px;
+
+  bottom: 4px !important;
+}
+
+.wheel-left,
+.wheel-right {
+  width: 38px;
+  height: 60px;
+}
+
+.wheel-center {
+  width: 58px !important;
+  height: 58px !important;
+
+  background: transparent !important;
+  border: 0 !important;
+}
+
+
+/* ==========================================================
+   QUEUE PANEL
+   separate from physical player
+========================================================== */
+
+.player-queue,
+.player-recs {
+  position: absolute !important;
+  z-index: 5 !important;
+
+  left: calc(100% + 18px) !important;
+
+  width: 205px !important;
+
+  box-sizing: border-box;
+
+  border: 1px solid rgba(187, 176, 141, .40) !important;
+
+  background: rgba(17, 24, 19, .90) !important;
+
+  box-shadow:
+    3px 3px 0 rgba(0,0,0,.22),
+    inset 0 0 0 1px rgba(228,205,146,.05);
+
+  color: rgba(224, 203, 145, .78) !important;
+}
+
+
+.player-queue {
+  top: 72px !important;
+}
+
+
+.player-recs {
+  top: 205px !important;
+}
+
+
+/* Section headings */
+.player-section-title {
+  color: rgba(225, 195, 118, .70) !important;
+
+  font-size: 6px !important;
+  letter-spacing: .14em !important;
+}
+
+
+/* Queue rows */
+.player-track,
+.player-rec {
+  color: rgba(224, 211, 167, .72) !important;
+
+  font-size: 6px !important;
+}
+
+
+.player-track.active {
+  background: rgba(72, 96, 72, .68) !important;
+  color: #eee0af !important;
+}
+
+
+.player-track:hover,
+.player-rec:hover {
+  background: rgba(86, 104, 74, .28) !important;
+}
+
+
+/* recommendation + symbol */
+.player-rec > span {
+  color: #91a66d !important;
+}
+
+
+/* ==========================================================
+   SMALLER SCREENS
+========================================================== */
+
+@media (max-width: 1100px) {
+  .pixel-player {
+    transform:
+      translateY(-48%)
+      scale(.86) !important;
+
+    transform-origin: left center;
+  }
+}
+
+
+/* ==========================================================
+   PLAYER — DEVICE SHELL FIRST
+========================================================== */
+
+.pixel-player {
+  position: absolute !important;
+  z-index: 30 !important;
+
+  left: 4% !important;
+  top: 49% !important;
+
+  width: 210px !important;
+  height: 430px !important;
+
+  transform: translateY(-50%) !important;
+
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  overflow: visible !important;
+}
+
+.player-shell-art {
+  display: block !important;
+
+  position: absolute !important;
+  z-index: 30 !important;
+
+  top: 0 !important;
+  left: 50% !important;
+
+  width: 210px !important;
+  height: auto !important;
+
+  transform: translateX(-50%) !important;
+
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated;
+
+  pointer-events: none !important;
+}
+
+/* Hide HTML overlays temporarily */
+.pixel-player-screen,
+.click-wheel,
+.player-queue,
+.player-recs {
+  visibility: hidden !important;
+}
+
+/* Kill all previous standalone earphone/wire experiments */
+.player-earbuds,
+.player-earphones,
+.earbuds,
+.earphones,
+.earbud-left,
+.earbud-right,
+.earphone-left,
+.earphone-right,
+.player-wire,
+.player-cable,
+.earphone-wire,
+.earphone-cable {
+  display: none !important;
+}
+
+
+/* =========================================================
+   PLAYER — ORIGINAL ART, NO CROPPING
+========================================================= */
+
+.pixel-player {
+  position: absolute !important;
+
+  left: 0 !important;
+  top: 48% !important;
+
+  width: 360px !important;
+  height: 520px !important;
+
+  transform: translateY(-50%) !important;
+
+  z-index: 40 !important;
+  overflow: visible !important;
+
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.player-shell-art {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  position: absolute !important;
+
+  /*
+   * Original art canvas is much wider than the device.
+   * Render the canvas large enough for the central player
+   * to become ~200px wide.
+   */
+  width: 650px !important;
+  max-width: none !important;
+  height: auto !important;
+
+  left: -205px !important;
+  top: -20px !important;
+
+  transform: none !important;
+
+  z-index: 41 !important;
+
+  object-fit: contain !important;
+  pointer-events: none !important;
+}
+
+/* Keep functionality hidden until shell alignment is finished */
+
+.pixel-player-screen,
+.click-wheel,
+.player-queue,
+.player-recs {
+  visibility: hidden !important;
+}
+
+
+/* ==========================================================
+   PLAYER SHELL — CALIBRATION
+========================================================== */
+
+.pixel-player {
+  position: absolute !important;
+  z-index: 30 !important;
+
+  left: 2.5% !important;
+  top: 50% !important;
+
+  width: 300px !important;
+  height: 520px !important;
+
+  transform: translateY(-50%) !important;
+
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  overflow: visible !important;
+}
+
+
+/* original PNG contains a large transparent canvas */
+.player-shell-art {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  position: absolute !important;
+  z-index: 31 !important;
+
+  width: 650px !important;
+  max-width: none !important;
+  height: auto !important;
+
+  left: -205px !important;
+  top: -30px !important;
+
+  transform: none !important;
+
+  object-fit: contain !important;
+  image-rendering: pixelated;
+
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+
+/* Hide functional overlays ONLY while calibrating artwork */
+.pixel-player-header,
+.pixel-player-screen,
+.click-wheel,
+.player-queue,
+.player-recs {
+  visibility: hidden !important;
+}
+
+
+/* old CSS earphone system must never reappear */
+.wired-earphones,
+.earbud,
+.earphone-cable,
+.earphone-split {
+  display: none !important;
+}
+
+
+/* Player wire: extend vertically to bottom edge of viewport */
+.pixel-player::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 99%;
+  width: 3px;
+  height: calc(100vh - 100%);
+  min-height: 500px;
+  background: #eee9d9;
+  border-left: 1px solid rgba(255,255,255,.45);
+  border-right: 1px solid rgba(70,70,60,.5);
+  transform: translateX(-50%);
+  z-index: -1;
+  pointer-events: none;
+  box-shadow: 0 0 3px rgba(238,233,217,.35);
+}
+
+.pixel-player {
+  overflow: visible !important;
+}
+
+/* Remove previous fake wire */
+.pixel-player::after {
+  display: none !important;
+}
+
+/* Continue the PNG's existing wire to bottom of screen */
+.pixel-player::before {
+  content: "";
+  position: fixed;
+
+  /* align this with the END of the curved wire in the PNG */
+  left: 320px;
+  top: 630px;
+
+  width: 3px;
+  height: calc(100vh - 630px);
+
+  background: #eee9dc;
+  box-shadow:
+    1px 0 0 rgba(255,255,255,.45),
+    -1px 0 0 rgba(60,55,45,.45),
+    0 0 3px rgba(255,245,220,.25);
+
+  z-index: 20;
+  pointer-events: none;
+}
+
+.pixel-player {
+  overflow: visible !important;
+}
+
+/* ==========================================================
+   PLAYER CABLE — CONNECT PNG WIRE TO BOTTOM EDGE
+========================================================== */
+
+/* kill earlier fake extension */
+.pixel-player::after {
+  display: none !important;
+}
+
+/*
+ * The PNG cable currently ends around:
+ * x ≈ 285px, y ≈ 410px inside .pixel-player.
+ * Continue vertically from there.
+ */
+.pixel-player::before {
+  content: "" !important;
+
+  position: absolute !important;
+
+  left: 280px !important;
+  top: 410px !important;
+
+  width: 2px !important;
+
+  /*
+   * .pixel-player is centered vertically:
+   * top = 50vh - 260px
+   *
+   * endpoint = player top + 410px
+   * therefore remaining viewport height = 50vh - 150px
+   */
+  height: calc(50vh - 150px) !important;
+
+  display: block !important;
+
+  background: rgba(238, 233, 220, 0.92) !important;
+
+  box-shadow:
+    1px 0 0 rgba(255,255,255,.35),
+    -1px 0 0 rgba(55,52,45,.40),
+    0 0 2px rgba(255,245,220,.20) !important;
+
+  z-index: 32 !important;
+
+  pointer-events: none !important;
+}
+
+.pixel-player {
+  overflow: visible !important;
+}
+
+
+/* ==========================================================
+   FINAL PLAYER POSITION — REAL PNG WIRE ONLY
+========================================================== */
+
+/* absolutely no generated/fake wire */
+.pixel-player::before,
+.pixel-player::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Move the whole player downward */
+.pixel-player {
+  top: 72% !important;
+  transform: translateY(-50%) !important;
+  overflow: visible !important;
+}
+
+
+/* PLAYER — BIGGER + LOWER */
+.pixel-player {
+  top: 70% !important;
+  transform: translateY(-50%) !important;
+}
+
+/* Scale the original player + real wire together */
+.player-shell-art {
+  width: 760px !important;
+
+  /* compensate for larger transparent PNG canvas */
+  left: -240px !important;
+  top: -35px !important;
+}
+
+/* no CSS-generated wire */
+.pixel-player::before,
+.pixel-player::after {
+  content: none !important;
+  display: none !important;
+}
+
+
+/* PLAYER — LOWER + RIGHT */
+.pixel-player {
+  left: 5% !important;
+  top: 77% !important;
+  transform: translateY(-50%) !important;
+}
+
+/* keep real PNG wire only */
+.pixel-player::before,
+.pixel-player::after {
+  content: none !important;
+  display: none !important;
+}
+
+
+
+/* ==========================================================
+   PLAYER PNG — INVISIBLE INTERACTIVE CLICK-WHEEL
+========================================================== */
+
+.player-hit-controls {
+  position: absolute !important;
+
+  /*
+   * Hitbox coordinate system.
+   * Calibrated against the currently rendered PNG.
+   */
+  left: 0 !important;
+  top: 0 !important;
+
+  width: 300px !important;
+  height: 520px !important;
+
+  z-index: 50 !important;
+
+  pointer-events: none !important;
+}
+
+.player-hit {
+  position: absolute !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+
+  appearance: none !important;
+  -webkit-appearance: none !important;
+
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/*
+ * Current visible player is approximately x=25–175
+ * inside .pixel-player after PNG scaling/cropping.
+ *
+ * These are intentionally conservative hit areas.
+ */
+
+.player-hit-play {
+  left: 92px !important;
+  top: 226px !important;
+
+  width: 48px !important;
+  height: 48px !important;
+
+  border-radius: 50% !important;
+}
+
+.player-hit-prev {
+  left: 55px !important;
+  top: 218px !important;
+
+  width: 36px !important;
+  height: 55px !important;
+}
+
+.player-hit-next {
+  left: 141px !important;
+  top: 218px !important;
+
+  width: 36px !important;
+  height: 55px !important;
+}
+
+.player-hit-menu {
+  left: 82px !important;
+  top: 184px !important;
+
+  width: 68px !important;
+  height: 35px !important;
+}
+
+.player-hit-queue {
+  left: 82px !important;
+  top: 273px !important;
+
+  width: 68px !important;
+  height: 35px !important;
+}
+
+/* keyboard focus only — preserve PNG appearance otherwise */
+.player-hit:focus-visible {
+  outline: 1px dashed rgba(232, 219, 165, .85) !important;
+  outline-offset: 2px !important;
+}
+
+
+/* ==========================================================
+   MP4 PLAYER — COMPACT QUEUE POPOVER
+========================================================== */
+
+.player-popover {
+  position: absolute;
+  z-index: 60;
+
+  left: 245px;
+  top: 105px;
+
+  width: 205px;
+
+  padding: 7px;
+
+  border: 1px solid rgba(221, 198, 135, .50);
+  outline: 1px solid rgba(20, 24, 20, .9);
+
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 3px,
+      rgba(124, 169, 116, .018) 4px
+    ),
+    rgba(15, 23, 18, .94);
+
+  box-shadow:
+    4px 4px 0 rgba(0, 0, 0, .28),
+    inset 0 0 0 1px rgba(225, 202, 139, .05);
+
+  color: rgba(225, 210, 161, .82);
+
+  image-rendering: pixelated;
+}
+
+
+.player-popover-title {
+  display: flex;
+  justify-content: space-between;
+
+  padding: 3px 5px 7px;
+
+  border-bottom: 1px solid rgba(217, 190, 121, .22);
+
+  color: rgba(224, 195, 119, .72);
+
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .15em;
+}
+
+
+.player-popover-list {
+  display: grid;
+  gap: 2px;
+
+  padding-top: 5px;
+}
+
+
+.player-popover-track {
+  display: grid;
+  grid-template-columns: 22px 1fr 12px;
+  align-items: center;
+  gap: 5px;
+
+  min-width: 0;
+
+  padding: 6px 5px;
+
+  border: 0;
+  background: transparent;
+
+  color: rgba(220, 210, 173, .67);
+
+  font-family: inherit;
+  font-size: 6px;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+
+.player-popover-track:hover {
+  background: rgba(73, 94, 71, .30);
+}
+
+
+.player-popover-track.active {
+  background: rgba(68, 91, 67, .70);
+  color: #eee0ae;
+}
+
+
+.player-popover-copy {
+  min-width: 0;
+
+  display: grid;
+  gap: 3px;
+}
+
+
+.player-popover-copy strong,
+.player-popover-copy small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+
+.player-popover-copy strong {
+  font-size: 7px;
+  font-weight: 700;
+}
+
+
+.player-popover-copy small {
+  color: rgba(188, 202, 158, .48);
+
+  font-size: 5px;
+  letter-spacing: .04em;
+}
+
+
+/* ==========================================================
+   QUEUE POPOVER — ABOVE PLAYER
+========================================================== */
+
+.player-popover {
+  left: 50% !important;
+  top: auto !important;
+  bottom: calc(100% + 14px) !important;
+
+  transform: translateX(-50%) !important;
+
+  width: 220px !important;
+
+  z-index: 60 !important;
+}
+
+
+/* ==========================================================
+   QUEUE POPOVER — MATCH PLAYER SHELL
+========================================================== */
+
+.player-popover {
+  left: 50% !important;
+  top: auto !important;
+  bottom: calc(100% + 12px) !important;
+
+  transform: translateX(-50%) !important;
+
+  width: 230px !important;
+  padding: 7px !important;
+
+  border: 3px solid #2f302c !important;
+  outline: 1px solid rgba(240, 234, 214, .48) !important;
+
+  background: #e9e4d4 !important;
+
+  box-shadow:
+    4px 4px 0 rgba(0, 0, 0, .30),
+    inset 0 0 0 2px rgba(255, 252, 236, .55) !important;
+
+  color: #2d302a !important;
+
+  image-rendering: pixelated;
+}
+
+
+/* Header resembles the player casing */
+.player-popover-title {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+
+  padding: 6px 7px !important;
+
+  border: 2px solid #3b3d36 !important;
+
+  background: #c9c4b3 !important;
+
+  color: #30332d !important;
+
+  font-size: 7px !important;
+  font-weight: 700 !important;
+  letter-spacing: .14em !important;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 252, 235, .42) !important;
+}
+
+
+/* LCD-style inner queue screen */
+.player-popover-list {
+  display: grid !important;
+  gap: 2px !important;
+
+  margin-top: 6px !important;
+  padding: 5px !important;
+
+  border: 3px inset #5b5d53 !important;
+
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 3px,
+      rgba(117, 190, 139, .035) 4px
+    ),
+    #10251d !important;
+
+  box-shadow:
+    inset 0 0 10px rgba(80, 155, 103, .10) !important;
+}
+
+
+/* Track rows now look like LCD menu entries */
+.player-popover-track {
+  display: grid !important;
+  grid-template-columns: 22px 1fr 12px !important;
+  align-items: center !important;
+  gap: 5px !important;
+
+  padding: 6px 5px !important;
+
+  border: 0 !important;
+  background: transparent !important;
+
+  color: #83b98c !important;
+
+  font-family: inherit !important;
+  font-size: 6px !important;
+
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+
+/* Selected row = old LCD highlight */
+.player-popover-track.active {
+  background: #49654d !important;
+  color: #e8e0b5 !important;
+}
+
+
+/* Hover feels like moving through an old device menu */
+.player-popover-track:hover {
+  background: rgba(86, 118, 87, .42) !important;
+}
+
+
+/* title + artist treatment */
+.player-popover-copy strong {
+  color: inherit !important;
+  font-size: 7px !important;
+  font-weight: 700 !important;
+}
+
+.player-popover-copy small {
+  margin-top: 2px !important;
+
+  color: rgba(145, 189, 145, .62) !important;
+
+  font-size: 5px !important;
+  letter-spacing: .05em !important;
+}
+
+
+/* tiny connector nub so popover feels attached to player */
+.player-popover::after {
+  content: "" !important;
+
+  position: absolute !important;
+
+  left: 50% !important;
+  bottom: -10px !important;
+
+  width: 16px !important;
+  height: 10px !important;
+
+  transform: translateX(-50%) !important;
+
+  border-left: 3px solid #2f302c !important;
+  border-right: 3px solid #2f302c !important;
+
+  background: #e9e4d4 !important;
+}
+
+
+/* ==========================================================
+   QUEUE — SMALLER PANEL + MORE READABLE TYPE
+========================================================== */
+
+.player-popover {
+  /* smaller than current dashboard */
+  width: 195px !important;
+  padding: 6px !important;
+
+  /* keep centered above player */
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: calc(100% + 14px) !important;
+  transform: translateX(-50%) !important;
+}
+
+
+/* slightly more compact header */
+.player-popover-title {
+  padding: 5px 7px !important;
+
+  font-size: 8px !important;
+  line-height: 1 !important;
+  letter-spacing: .12em !important;
+}
+
+
+/* compact LCD area */
+.player-popover-list {
+  margin-top: 5px !important;
+  padding: 4px !important;
+  gap: 1px !important;
+}
+
+
+/* make each row shorter */
+.player-popover-track {
+  grid-template-columns: 20px minmax(0, 1fr) 12px !important;
+  gap: 5px !important;
+
+  padding: 5px 5px !important;
+
+  font-size: 8px !important;
+  line-height: 1.15 !important;
+}
+
+
+/* MAIN SONG TITLE — noticeably more readable */
+.player-popover-copy strong {
+  display: block !important;
+
+  font-size: 9px !important;
+  line-height: 1.15 !important;
+  font-weight: 700 !important;
+  letter-spacing: .035em !important;
+
+  color: #dce4b3 !important;
+}
+
+
+/* artist — still secondary, but readable */
+.player-popover-copy small {
+  display: block !important;
+
+  margin-top: 3px !important;
+
+  font-size: 6.5px !important;
+  line-height: 1.1 !important;
+  letter-spacing: .045em !important;
+
+  color: rgba(166, 204, 157, .78) !important;
+}
+
+
+/* track number */
+.player-popover-track > span:first-child {
+  font-size: 7px !important;
+  font-weight: 700 !important;
+}
+
+
+/* selected track */
+.player-popover-track.active {
+  background: #506b52 !important;
+  color: #f1e7b8 !important;
+}
+
+
+/* smaller connector nub */
+.player-popover::after {
+  width: 12px !important;
+  height: 8px !important;
+  bottom: -8px !important;
+}
+
+
+/* Queue — slight left adjustment */
+.player-popover {
+  transform: translateX(calc(-50% - 18px)) !important;
+}
+
+
+/* ==========================================================
+   QUEUE — SMALLER + SCROLLABLE
+========================================================== */
+
+.player-popover {
+  width: 175px !important;
+  padding: 5px !important;
+
+  /* retain slight left shift */
+  transform: translateX(calc(-50% - 18px)) !important;
+}
+
+
+/* fixed header */
+.player-popover-title {
+  padding: 5px 6px !important;
+  font-size: 7.5px !important;
+}
+
+
+/* scroll ONLY the queue contents */
+.player-popover-list {
+  max-height: 112px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+
+  margin-top: 4px !important;
+  padding: 3px !important;
+
+  scrollbar-width: thin;
+  scrollbar-color: #829b73 #17281f;
+}
+
+
+/* Chrome / Safari pixel-style scrollbar */
+.player-popover-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.player-popover-list::-webkit-scrollbar-track {
+  background: #17281f;
+}
+
+.player-popover-list::-webkit-scrollbar-thumb {
+  background: #829b73;
+  border: 1px solid #17281f;
+}
+
+
+/* compact rows without shrinking readable text */
+.player-popover-track {
+  grid-template-columns: 17px minmax(0, 1fr) 9px !important;
+
+  gap: 4px !important;
+  padding: 5px 4px !important;
+}
+
+
+/* keep song names readable */
+.player-popover-copy strong {
+  font-size: 8.5px !important;
+}
+
+
+/* artist */
+.player-popover-copy small {
+  font-size: 6px !important;
+}
+
+
+/* smaller track number */
+.player-popover-track > span:first-child {
+  font-size: 6.5px !important;
+}
+
+
+/* smaller connector */
+.player-popover::after {
+  width: 10px !important;
+}
+
+
+/* ==========================================================
+   QUEUE + LIVE RECOMMENDATIONS
+========================================================== */
+
+.player-popover-section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 5px 4px 4px;
+
+  color: rgba(174, 207, 161, .72);
+
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: .10em;
+}
+
+.player-popover-divider {
+  height: 1px;
+
+  margin: 5px 2px;
+
+  background: rgba(138, 180, 139, .22);
+}
+
+.player-popover-loading {
+  padding: 8px 5px;
+
+  color: rgba(145, 188, 145, .54);
+
+  font-size: 6px;
+  letter-spacing: .08em;
+
+  text-align: center;
+}
+
+.player-popover-rec {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+
+  padding: 5px 4px;
+
+  border: 0;
+  background: transparent;
+
+  color: rgba(210, 225, 178, .78);
+
+  font-family: inherit;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.player-popover-rec:hover:not(:disabled) {
+  background: rgba(82, 112, 80, .32);
+}
+
+.player-popover-rec:disabled {
+  opacity: .42;
+  cursor: default;
+}
+
+.player-popover-rec-action {
+  color: #a4ba78;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-align: center;
+}
+
+/* allow queue + recs to scroll together */
+.player-popover-list {
+  max-height: 155px !important;
+  overflow-y: auto !important;
+}
+
+
+/* ==========================================================
+   YOUTUBE — B&W SKY VIDEO
+========================================================== */
+
+.sky-media {
+  z-index: 1 !important;
+
+  pointer-events: none !important;
+  overflow: hidden !important;
+
+  opacity: .42 !important;
+}
+
+
+/* API initially creates inside this element */
+#sky-youtube-player {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+/* API replaces target with iframe */
+.sky-media iframe {
+  display: block !important;
+
+  position: absolute !important;
+
+  left: 50% !important;
+  top: 50% !important;
+
+  /*
+   * Oversize slightly so 16:9 video fills the sky
+   * without revealing iframe edges.
+   */
+  width: 110% !important;
+  height: 110% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+
+  transform:
+    translate(-50%, -50%)
+    scale(1.05) !important;
+
+  border: 0 !important;
+
+  filter:
+    grayscale(1)
+    contrast(.88)
+    brightness(.72)
+    blur(1.2px) !important;
+
+  opacity: .82 !important;
+
+  pointer-events: none !important;
+}
+
+
+/*
+ * Fade video into scenery instead of ending
+ * with a hard rectangular boundary.
+ */
+.sky-media {
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.92) 0%,
+      rgba(0,0,0,.86) 42%,
+      rgba(0,0,0,.48) 72%,
+      transparent 100%
+    ) !important;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.92) 0%,
+      rgba(0,0,0,.86) 42%,
+      rgba(0,0,0,.48) 72%,
+      transparent 100%
+    ) !important;
+}
+
+
+/* ==========================================================
+   PLAYER — LIVE LCD OVERLAY
+   overrides old calibration rules that hid the HTML LCD
+========================================================== */
+
+.pixel-player-screen {
+  visibility: visible !important;
+  display: flex !important;
+
+  position: absolute !important;
+  z-index: 55 !important;
+
+  /*
+   * Overlay on the physical PNG screen.
+   * Fine-tune these four values only if needed.
+   */
+  left: 33px !important;
+  top: 68px !important;
+
+  width: 181px !important;
+  height: 118px !important;
+  min-height: 0 !important;
+
+  margin: 0 !important;
+  padding: 8px 9px !important;
+
+  box-sizing: border-box !important;
+
+  border: 0 !important;
+
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 3px,
+      rgba(130, 205, 145, .035) 4px
+    ),
+    rgba(13, 36, 27, .985) !important;
+
+  color: #9bc998 !important;
+
+  box-shadow:
+    inset 0 0 9px rgba(89, 173, 108, .14) !important;
+
+  overflow: hidden !important;
+}
+
+
+/* NOW PLAYING + position */
+.player-screen-top {
+  font-size: 7px !important;
+  line-height: 1 !important;
+}
+
+
+/* actual YouTube title */
+.pixel-player-screen > strong {
+  display: block !important;
+
+  margin-top: 4px !important;
+
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+
+  color: #cae6ad !important;
+
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+}
+
+
+/* actual channel */
+.pixel-player-screen > strong + span {
+  display: block !important;
+
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+
+  color: rgba(167, 207, 163, .75) !important;
+
+  font-size: 6px !important;
+}
+
+
+/* LCD progress bar */
+.player-progress {
+  height: 12px !important;
+  margin-top: auto !important;
+
+  align-items: end !important;
+}
+
+.player-progress i {
+  opacity: .20 !important;
+  background: #9dcc8e !important;
+}
+
+.player-progress i.active {
+  opacity: 1 !important;
+
+  box-shadow:
+    0 0 3px rgba(158, 214, 143, .45);
+}
+
+
+/* actual elapsed / duration */
+.player-time {
+  margin-top: 2px !important;
+
+  color: #a8d39b !important;
+  font-size: 6px !important;
+}
+
+
+/* ==========================================================
+   LIVE LCD — ALIGN INSIDE PHYSICAL PLAYER SCREEN
+========================================================== */
+
+.pixel-player-screen {
+  /* remove old centering transform */
+  transform: none !important;
+
+  /* align with green LCD printed on player PNG */
+  left: 61px !important;
+  top: 47px !important;
+
+  width: 174px !important;
+  height: 116px !important;
+
+  margin: 0 !important;
+  padding: 8px 9px !important;
+
+  z-index: 55 !important;
+}
+
+
+/* keep contents compact inside physical LCD */
+.pixel-player-screen > strong {
+  font-size: 9px !important;
+  margin-top: 5px !important;
+}
+
+.pixel-player-screen > strong + span {
+  font-size: 6px !important;
+}
+
+.player-screen-top {
+  font-size: 6px !important;
+}
+
+.player-progress {
+  margin-top: auto !important;
+}
+
+.player-time {
+  font-size: 6px !important;
+}
+
+
+/* LIVE LCD — 11px LEFT */
+.pixel-player-screen {
+  left: 50px !important;
+}
+
+
+/* ==========================================================
+   QUEUE MANAGEMENT — DRAG / REMOVE
+========================================================== */
+
+.player-popover-row {
+  display: grid !important;
+  grid-template-columns: 13px minmax(0, 1fr) 18px !important;
+  align-items: stretch !important;
+
+  width: 100% !important;
+
+  border: 0 !important;
+  background: transparent !important;
+
+  cursor: default;
+}
+
+.player-popover-row:hover {
+  background: rgba(78, 108, 78, .22) !important;
+}
+
+.player-popover-row.active {
+  background: #506b52 !important;
+}
+
+
+/* Track button now occupies middle column */
+
+.player-popover-row .player-popover-track {
+  display: grid !important;
+  grid-template-columns: 17px minmax(0, 1fr) 10px !important;
+
+  width: 100% !important;
+  min-width: 0 !important;
+
+  padding: 5px 2px !important;
+
+  background: transparent !important;
+}
+
+.player-popover-row.active .player-popover-track {
+  background: transparent !important;
+}
+
+
+/* Drag affordance */
+
+.player-drag-handle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  color: rgba(159, 192, 145, .58) !important;
+
+  font-size: 7px !important;
+  line-height: 1 !important;
+
+  cursor: grab !important;
+  user-select: none !important;
+}
+
+.player-popover-row:active .player-drag-handle {
+  cursor: grabbing !important;
+}
+
+
+/* Remove button */
+
+.player-remove-track {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 18px !important;
+  min-width: 18px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border: 0 !important;
+  background: transparent !important;
+
+  color: rgba(174, 194, 157, .48) !important;
+
+  font-family: inherit !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+
+  cursor: pointer !important;
+}
+
+.player-remove-track:hover {
+  background: rgba(122, 69, 55, .55) !important;
+  color: #f2d6b4 !important;
+}
+
+
+/* Playing indicator */
+
+.player-track-state {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  font-size: 6px !important;
+}
+
+
+/* subtle drop feedback */
+.player-popover-row[draggable="true"] {
+  border-top: 1px solid transparent !important;
+}
+
+.player-popover-row[draggable="true"]:hover {
+  border-top-color: rgba(161, 196, 148, .18) !important;
+}
+
+
+/* ==========================================================
+   PLAYER DISCOVERY SEARCH
+========================================================== */
+
+.player-search {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 24px !important;
+  gap: 3px !important;
+
+  margin: 4px 2px 5px !important;
+}
+
+.player-search input {
+  width: 100% !important;
+  min-width: 0 !important;
+
+  padding: 5px 6px !important;
+
+  border: 1px solid rgba(131, 181, 131, .30) !important;
+  outline: 0 !important;
+
+  background: rgba(5, 25, 18, .72) !important;
+  color: #b8d8a6 !important;
+
+  font-family: inherit !important;
+  font-size: 7px !important;
+  letter-spacing: .05em !important;
+
+  box-sizing: border-box !important;
+}
+
+.player-search input::placeholder {
+  color: rgba(155, 192, 150, .40) !important;
+}
+
+.player-search input:focus {
+  border-color: rgba(174, 209, 159, .70) !important;
+
+  box-shadow:
+    inset 0 0 5px rgba(120, 190, 126, .10) !important;
+}
+
+.player-search button {
+  padding: 0 !important;
+
+  border: 1px solid rgba(131, 181, 131, .30) !important;
+
+  background: rgba(72, 99, 70, .50) !important;
+  color: #bed7a6 !important;
+
+  font-family: inherit !important;
+  font-size: 10px !important;
+
+  cursor: pointer !important;
+}
+
+.player-search button:hover {
+  background: rgba(83, 119, 79, .78) !important;
+}
+
+
+/* reset back to default mode recommendations */
+.player-discovery-reset {
+  padding: 0 2px !important;
+
+  border: 0 !important;
+  background: transparent !important;
+
+  color: rgba(174, 207, 161, .72) !important;
+
+  font-family: inherit !important;
+  font-size: 9px !important;
+
+  cursor: pointer !important;
+}
+
+.player-discovery-reset:hover {
+  color: #d9e7b4 !important;
+}
+
+
+/* ==========================================================
+   PLAYER — FIX NEXT HITBOX
+========================================================== */
+
+.player-hit-next {
+  left: 128px !important;
+  top: 218px !important;
+
+  width: 48px !important;
+  height: 55px !important;
+}
+
+
+/* ==========================================================
+   PLAYER CONTROLS — SINGLE CLICK LAYER ONLY
+========================================================== */
+
+/* Disable the old visible HTML wheel buttons */
+.click-wheel {
+  pointer-events: none !important;
+}
+
+.click-wheel button {
+  pointer-events: none !important;
+}
+
+/* Keep only invisible hitboxes interactive */
+.player-hit-controls {
+  pointer-events: none !important;
+  z-index: 80 !important;
+}
+
+.player-hit {
+  pointer-events: auto !important;
+}
+
+/* Recalibrate hitboxes around current rendered wheel */
+.player-hit-prev {
+  left: 58px !important;
+  top: 221px !important;
+  width: 42px !important;
+  height: 48px !important;
+}
+
+.player-hit-play {
+  left: 101px !important;
+  top: 220px !important;
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.player-hit-next {
+  left: 151px !important;
+  top: 221px !important;
+  width: 42px !important;
+  height: 48px !important;
+}
+
+.player-hit-menu {
+  left: 87px !important;
+  top: 185px !important;
+  width: 78px !important;
+  height: 30px !important;
+}
+
+.player-hit-queue {
+  left: 87px !important;
+  top: 274px !important;
+  width: 78px !important;
+  height: 30px !important;
+}
+
+
+/* ==========================================================
+   YOUTUBE SKY — CROP YOUTUBE TITLE / HEADER
+========================================================== */
+
+.sky-media iframe {
+  width: 120% !important;
+  height: 145% !important;
+
+  left: 50% !important;
+  top: 42% !important;
+
+  transform: translate(-50%, -50%) !important;
+}
+
+
+.sky-media iframe {
+  top: 37% !important;
+  height: 155% !important;
+}
+
+
+
+/* ==========================================================
+   SKY VIDEO — HIDE EMPTY YOUTUBE PLAYER
+========================================================== */
+
+/*
+ * YT.Player exists in the DOM from startup, but its empty
+ * iframe must never appear as part of the scenery.
+ */
+.sky-media {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Reveal only after a real queue track has a YouTube video. */
+.sky-media.has-video {
+  visibility: visible !important;
+  opacity: .42 !important;
+}
+
+
+/* YOUTUBE SKY — cover native center play/pause UI */
+.youtube-ui-cover {
+  position: absolute;
+  z-index: 5;
+
+  left: 50%;
+  top: 42%;
+
+  width: 120px;
+  height: 120px;
+
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+
+  background: rgba(10, 14, 12, .78);
+
+  -webkit-mask-image: radial-gradient(
+    circle,
+    #000 0%,
+    rgba(0,0,0,.92) 38%,
+    rgba(0,0,0,.45) 65%,
+    transparent 82%
+  );
+
+  mask-image: radial-gradient(
+    circle,
+    #000 0%,
+    rgba(0,0,0,.92) 38%,
+    rgba(0,0,0,.45) 65%,
+    transparent 82%
+  );
+
+  filter: blur(9px);
+}
+
+
+
+/* Disable obsolete YouTube UI cover */
+.youtube-ui-cover {
+  display: none !important;
+}
+
+/* ==========================================================
+   YOUTUBE BACKGROUND — DEEP CROP
+   Treat embedded video as atmospheric footage, not a player.
+========================================================== */
+
+.sky-media {
+  overflow: hidden !important;
+}
+
+/* YT replaces #sky-youtube-player with this iframe */
+.sky-media iframe {
+  position: absolute !important;
+
+  /*
+   * Large overscan:
+   * video extends far outside the visible sky viewport.
+   */
+  width: 150% !important;
+  height: 210% !important;
+
+  min-width: 150% !important;
+  min-height: 210% !important;
+
+  left: 50% !important;
+  top: 20% !important;
+
+  transform: translate(-50%, -50%) !important;
+
+  border: 0 !important;
+
+  pointer-events: none !important;
+
+  filter:
+    grayscale(1)
+    contrast(.88)
+    brightness(.72)
+    blur(1.2px) !important;
+}
+
+
+/* ==========================================================
+   YOUTUBE BACKGROUND — RESTORE ORIGINAL SIZE
+========================================================== */
+
+.sky-media iframe {
+  display: block !important;
+  position: absolute !important;
+
+  left: 50% !important;
+  top: 50% !important;
+
+  width: 110% !important;
+  height: 110% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+
+  transform:
+    translate(-50%, -50%)
+    scale(1.05) !important;
+
+  border: 0 !important;
+
+  filter:
+    grayscale(1)
+    contrast(.88)
+    brightness(.72)
+    blur(1.2px) !important;
+
+  opacity: .82 !important;
+  pointer-events: none !important;
+}
+
+
+
+/* Disable obsolete YouTube UI cover */
+.youtube-ui-cover {
+  display: none !important;
+}
+
+/* ==========================================================
+   YOUTUBE BACKGROUND — DEEP CROP
+   Treat embedded video as atmospheric footage, not a player.
+========================================================== */
+
+.sky-media {
+  overflow: hidden !important;
+}
+
+/* YT replaces #sky-youtube-player with this iframe */
+.sky-media iframe {
+  position: absolute !important;
+
+  /*
+   * Large overscan:
+   * video extends far outside the visible sky viewport.
+   */
+  width: 150% !important;
+  height: 210% !important;
+
+  min-width: 150% !important;
+  min-height: 210% !important;
+
+  left: 50% !important;
+  top: 20% !important;
+
+  transform: translate(-50%, -50%) !important;
+
+  border: 0 !important;
+
+  pointer-events: none !important;
+
+  filter:
+    grayscale(1)
+    contrast(.88)
+    brightness(.72)
+    blur(1.2px) !important;
+}
+
+
+/* ==========================================================
+   YOUTUBE BACKGROUND — RESTORE ORIGINAL SIZE
+========================================================== */
+
+.sky-media iframe {
+  display: block !important;
+  position: absolute !important;
+
+  left: 50% !important;
+  top: 50% !important;
+
+  width: 110% !important;
+  height: 110% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+
+  transform:
+    translate(-50%, -50%)
+    scale(1.05) !important;
+
+  border: 0 !important;
+
+  filter:
+    grayscale(1)
+    contrast(.88)
+    brightness(.72)
+    blur(1.2px) !important;
+
+  opacity: .82 !important;
+  pointer-events: none !important;
+}
+
+
+/* ==========================================================
+   YOUTUBE SKY — CROP YOUTUBE UI OUT OF VIEW
+========================================================== */
+
+/* The visible window */
+.sky-media {
+  overflow: hidden !important;
+}
+
+/*
+ * Oversize + shift the YouTube iframe upward.
+ * This crops YouTube's title/header from the visible region.
+ */
+.sky-media iframe {
+  visibility: visible !important;
+
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+
+  width: 130% !important;
+  height: 180% !important;
+
+  min-width: 130% !important;
+  min-height: 180% !important;
+
+  transform: translate(-50%, -54%) !important;
+
+  border: 0 !important;
+  pointer-events: none !important;
+
+  filter:
+    grayscale(1)
+    contrast(.88)
+    brightness(.72)
+    blur(1.2px) !important;
+}
+
+/* Remove the temporary debug rule's effect */
+.sky-media.has-video iframe {
+  visibility: visible !important;
+}
+
+
+/* ==========================================================
+   SKY VIDEO — SOFT EDGE BLEND
+   Fade YouTube into the underlying scenery.
+========================================================== */
+
+.sky-media {
+  overflow: hidden !important;
+
+  /* top fade + solid middle + bottom fade */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,0,0,.12) 5%,
+    rgba(0,0,0,.45) 12%,
+    rgba(0,0,0,.85) 22%,
+    #000 32%,
+    #000 68%,
+    rgba(0,0,0,.80) 78%,
+    rgba(0,0,0,.35) 90%,
+    transparent 100%
+  ) !important;
+
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,0,0,.12) 5%,
+    rgba(0,0,0,.45) 12%,
+    rgba(0,0,0,.85) 22%,
+    #000 32%,
+    #000 68%,
+    rgba(0,0,0,.80) 78%,
+    rgba(0,0,0,.35) 90%,
+    transparent 100%
+  ) !important;
+}
+
+/* Keep the video atmospheric rather than a hard rectangle */
+.sky-media.has-video {
+  opacity: .38 !important;
+}
+
+
+/* YouTube quota exhausted state */
+.quota-exhausted {
+  display: grid !important;
+  gap: 5px !important;
+
+  padding: 10px 6px !important;
+
+  text-align: center !important;
+}
+
+.quota-exhausted strong {
+  color: rgba(205, 214, 166, .82) !important;
+  font-size: 7px !important;
+  letter-spacing: .08em !important;
+}
+
+.quota-exhausted small {
+  color: rgba(145, 178, 139, .48) !important;
+  font-size: 5px !important;
+  letter-spacing: .07em !important;
+}
+
+
+/* ==========================================================
+   PERFORMER — GENTLE FLOAT
+========================================================== */
+
+.figure-wrap {
+  animation: performer-float 4.8s ease-in-out infinite !important;
+  will-change: transform;
+}
+
+@keyframes performer-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .figure-wrap {
+    animation: none !important;
+  }
+}
+
+
+/* ==========================================================
+   FIGURE — CENTERED GENTLE HOVER
+========================================================== */
+
+.figure-wrap {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+
+  animation: figure-hover 5.5s ease-in-out infinite !important;
+  will-change: transform;
+}
+
+@keyframes figure-hover {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0) rotate(-0.25deg);
+  }
+
+  25% {
+    transform: translateX(calc(-50% - 2px)) translateY(-4px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-7px) rotate(0.25deg);
+  }
+
+  75% {
+    transform: translateX(calc(-50% + 2px)) translateY(-3px) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .figure-wrap {
+    animation: none !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+
+/* ==========================================================
+   FIGURE — CENTERED GENTLE HOVER
+========================================================== */
+
+.figure-wrap {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+
+  animation: figure-hover 5.5s ease-in-out infinite !important;
+  will-change: transform;
+}
+
+@keyframes figure-hover {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0) rotate(-0.25deg);
+  }
+
+  25% {
+    transform: translateX(calc(-50% - 2px)) translateY(-4px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-7px) rotate(0.25deg);
+  }
+
+  75% {
+    transform: translateX(calc(-50% + 2px)) translateY(-3px) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .figure-wrap {
+    animation: none !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+
+/* ==========================================================
+   FIGURE — FINAL CENTERED WIND HOVER
+   Final override: keep after all reduced-motion rules.
+========================================================== */
+
+.figure-wrap {
+  left: 50% !important;
+  right: auto !important;
+
+  animation:
+    saigon-figure-wind 5.8s ease-in-out infinite !important;
+
+  transform-origin: 50% 85% !important;
+  will-change: transform;
+}
+
+@keyframes saigon-figure-wind {
+  0% {
+    transform:
+      translateX(-50%)
+      translateY(0px)
+      rotate(-0.15deg);
+  }
+
+  20% {
+    transform:
+      translateX(calc(-50% - 2px))
+      translateY(-4px)
+      rotate(0.15deg);
+  }
+
+  45% {
+    transform:
+      translateX(calc(-50% + 1px))
+      translateY(-9px)
+      rotate(0.3deg);
+  }
+
+  70% {
+    transform:
+      translateX(calc(-50% + 3px))
+      translateY(-5px)
+      rotate(-0.1deg);
+  }
+
+  100% {
+    transform:
+      translateX(-50%)
+      translateY(0px)
+      rotate(-0.15deg);
+  }
+}
+
+
+/* ==========================================================
+   FIGURE — FINAL HOVER FIX
+   Wrapper = positioning only
+   Image   = animation only
+========================================================== */
+
+.figure-wrap {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+
+  animation: none !important;
+}
+
+
+/* Override the old ".figure { animation: none !important; }" */
+.figure-wrap .figure {
+  animation: saigon-girl-hover 4.8s ease-in-out infinite !important;
+
+  transform-origin: 50% 85% !important;
+  will-change: transform !important;
+}
+
+
+@keyframes saigon-girl-hover {
+  0%,
+  100% {
+    transform:
+      translate3d(0, 0, 0)
+      rotate(-0.2deg);
+  }
+
+  20% {
+    transform:
+      translate3d(-2px, -4px, 0)
+      rotate(0.1deg);
+  }
+
+  45% {
+    transform:
+      translate3d(1px, -10px, 0)
+      rotate(0.3deg);
+  }
+
+  70% {
+    transform:
+      translate3d(3px, -5px, 0)
+      rotate(-0.1deg);
+  }
+}
+
+
+/* ==========================================================
+   FIGURE — REAL WIND HOVER
+   Avoid transform conflicts from legacy CSS.
+========================================================== */
+
+.figure-wrap {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  animation: none !important;
+}
+
+.figure-wrap .figure {
+  animation: saigon-wind-hover 4.6s ease-in-out infinite !important;
+
+  translate: 0 0;
+  rotate: 0deg;
+
+  will-change: translate, rotate !important;
+}
+
+@keyframes saigon-wind-hover {
+  0%,
+  100% {
+    translate: 0 0;
+    rotate: -0.15deg;
+  }
+
+  20% {
+    translate: -2px -4px;
+    rotate: 0.1deg;
+  }
+
+  45% {
+    translate: 1px -11px;
+    rotate: 0.3deg;
+  }
+
+  70% {
+    translate: 3px -5px;
+    rotate: -0.1deg;
+  }
+}
+
+
+/* ==========================================================
+   Y2K LCD — SCROLLING TRACK TITLE
+========================================================== */
+
+.lcd-title-marquee {
+  position: relative !important;
+
+  width: 100% !important;
+  overflow: hidden !important;
+
+  margin-top: 4px !important;
+
+  white-space: nowrap !important;
+
+  color: #cae6ad !important;
+
+  font-size: 9px !important;
+  line-height: 1.15 !important;
+}
+
+.lcd-title-marquee > span {
+  display: inline-block !important;
+
+  min-width: 100% !important;
+
+  padding-right: 28px !important;
+
+  transform: translateX(0);
+}
+
+/* Scroll only while actual media is playing */
+.lcd-title-marquee.playing > span {
+  animation: lcd-title-scroll 10s linear infinite !important;
+}
+
+@keyframes lcd-title-scroll {
+  0% {
+    transform: translateX(100%);
+  }
+
+  8% {
+    transform: translateX(0%);
+  }
+
+  75% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* pause title when media pauses */
+
+
+/* Artist stays underneath */
+.lcd-title-marquee + span {
+  display: block !important;
+
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+
+  color: rgba(167, 207, 163, .75) !important;
+
+  font-size: 6px !important;
+}
+
+
+/* ==========================================================
+   Y2K LCD MARQUEE — CONTINUOUS + FREEZE ON PAUSE
+========================================================== */
+
+.lcd-title-marquee {
+  position: relative !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+.lcd-title-marquee > span {
+  display: inline-block !important;
+
+  /*
+   * Keep the animation attached permanently.
+   * This is important: pause should freeze the current frame,
+   * not reset the title to its starting position.
+   */
+  animation-name: lcd-title-continuous !important;
+  animation-duration: 9s !important;
+  animation-timing-function: linear !important;
+  animation-iteration-count: infinite !important;
+
+  padding-right: 32px !important;
+
+  will-change: transform;
+}
+
+
+/* Playing = animation moves */
+.lcd-title-marquee.playing > span {
+  animation-play-state: running !important;
+}
+
+
+/* Paused = freeze EXACTLY where it currently is */
+.lcd-title-marquee:not(.playing) > span {
+  animation-play-state: paused !important;
+}
+
+
+/*
+ * Constant speed from beginning to end.
+ * No 8%, 75%, etc. holds.
+ *
+ * At 100%, browser immediately starts the next iteration.
+ */
+@keyframes lcd-title-continuous {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+
+/* Slower Y2K LCD title scroll */
+.lcd-title-marquee > span {
+  animation-duration: 16s !important;
+}
+
+
+/* ==========================================================
+   LCD MARQUEE — SLOW ENTRY / CONSTANT MOTION
+========================================================== */
+
+.lcd-title-marquee > span {
+  animation: lcd-title-slow-scroll 28s linear infinite !important;
+  animation-play-state: paused !important;
+}
+
+.lcd-title-marquee.playing > span {
+  animation-play-state: running !important;
+}
+
+.lcd-title-marquee:not(.playing) > span {
+  animation-play-state: paused !important;
+}
+
+@keyframes lcd-title-slow-scroll {
+  from {
+    transform: translateX(20px);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+
+/* ==========================================================
+   LCD TITLE — JS-DRIVEN CONSTANT SPEED
+========================================================== */
+
+.lcd-title-marquee {
+  position: relative !important;
+  width: 100% !important;
+
+  margin: 4px 0 0 0 !important;
+  padding: 0 !important;
+
+  overflow: hidden !important;
+  white-space: nowrap !important;
+
+  text-align: left !important;
+}
+
+.lcd-title-marquee > span {
+  display: inline-block !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  min-width: 0 !important;
+
+  animation: none !important;
+
+  transform: translate3d(0, 0, 0);
+
+  color: #cae6ad !important;
+
+  font-size: 9px !important;
+  line-height: 1.15 !important;
+
+  white-space: nowrap !important;
+
+  will-change: transform;
+}
+
+
+/* ==========================================================
+   PLAYER BRAND — REPLACE BAKED PNG LABEL
+========================================================== */
+
+.pixel-player::after {
+  content: "NAM-MP3-EXE" !important;
+
+  display: flex !important;
+  align-items: center !important;
+
+  position: absolute !important;
+  z-index: 90 !important;
+
+  /* align over baked SRIGOM.EXE label */
+  left: 42px !important;
+  top: 31px !important;
+
+  width: 118px !important;
+  height: 22px !important;
+
+  padding-left: 3px !important;
+
+  background: #eeeadd !important;
+  color: #20271f !important;
+
+  font-family: "Courier New", monospace !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 1px !important;
+  line-height: 1 !important;
+
+  white-space: nowrap !important;
+
+  pointer-events: none !important;
+
+  /* slight pixel-device texture */
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.5),
+    inset 0 -1px rgba(80,75,60,.12) !important;
+}
+
+
+/* REMOVE BROKEN PLAYER BRAND OVERLAY */
+.pixel-player::after {
+  content: none !important;
+  display: none !important;
+}
+
+
+/* Kill old HTML/CSS brand patch */
+.pixel-player::after {
+  content: none !important;
+  display: none !important;
+}
+
