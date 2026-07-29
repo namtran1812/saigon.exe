@@ -61,6 +61,14 @@ type MediaTrack = {
   videoId?: string;
 };
 
+type ServerQueue = {
+  id: string;
+  version: number;
+  tracks: Array<MediaTrack & {
+    position: number;
+  }>;
+};
+
 type YouTubeRecommendation = {
   id: string;
   title: string;
@@ -79,6 +87,7 @@ type YouTubePlayerInstance = {
   getCurrentTime: () => number;
   getDuration: () => number;
   getPlayerState: () => number;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   destroy: () => void;
 };
 
@@ -101,6 +110,69 @@ declare global {
     onYouTubeIframeAPIReady?: () => void;
   }
 }
+
+
+const SAIGON_QUEUE_STORAGE_KEY = "saigon.exe.mediaQueue";
+const SAIGON_SERVER_QUEUE_ID_KEY = "saigon.exe.serverQueueId";
+const SAIGON_ROOM_STORAGE_KEY = "saigon.exe.roomId";
+const SAIGON_TRACK_STORAGE_KEY = "saigon.exe.currentTrack";
+const SAIGON_REPEAT_STORAGE_KEY = "saigon.exe.repeatMode";
+const SAIGON_SHUFFLE_STORAGE_KEY = "saigon.exe.shuffle";
+
+function loadSavedQueue(): MediaTrack[] {
+  try {
+    const raw = localStorage.getItem(SAIGON_QUEUE_STORAGE_KEY);
+
+    if (!raw) return INITIAL_MEDIA_QUEUE;
+
+    const parsed = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) {
+      return INITIAL_MEDIA_QUEUE;
+    }
+
+    return parsed.filter(
+      (track): track is MediaTrack =>
+        track &&
+        typeof track.id === "string" &&
+        typeof track.title === "string" &&
+        typeof track.artist === "string"
+    );
+  } catch {
+    return INITIAL_MEDIA_QUEUE;
+  }
+}
+
+function loadSavedTrackId(): string | null {
+  try {
+    return localStorage.getItem(SAIGON_TRACK_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function loadSavedRepeatMode(): "off" | "all" | "one" {
+  try {
+    const value = localStorage.getItem(SAIGON_REPEAT_STORAGE_KEY);
+
+    if (value === "off" || value === "all" || value === "one") {
+      return value;
+    }
+  } catch {
+    // Ignore unavailable storage.
+  }
+
+  return "all";
+}
+
+function loadSavedShuffle(): boolean {
+  try {
+    return localStorage.getItem(SAIGON_SHUFFLE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 
 const DEFAULT_DURATION_SECONDS = 0;
 
@@ -134,6 +206,240 @@ function splitTime(totalSeconds: number) {
 }
 
 
+
+class QueueAPIError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "QueueAPIError";
+    this.status = status;
+  }
+}
+
+async function createServerQueue(): Promise<ServerQueue> {
+  const response = await fetch("/api/queues", {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `create queue failed: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+async function fetchServerQueue(
+  queueId: string
+): Promise<ServerQueue> {
+  const response = await fetch(
+    `/api/queues/${encodeURIComponent(queueId)}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `fetch queue failed: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+async function addTrackToServerQueue(
+  queueId: string,
+  version: number,
+  track: MediaTrack,
+  roomId?: string
+): Promise<ServerQueue> {
+  const response = await fetch(
+    `/api/queues/${encodeURIComponent(queueId)}/tracks?room=${encodeURIComponent(roomId ?? "")}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...track,
+        expectedVersion: version,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new QueueAPIError(
+      response.status,
+      `add track failed: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+async function removeTrackFromServerQueue(
+  queueId: string,
+  version: number,
+  trackId: string,
+  roomId?: string
+): Promise<ServerQueue> {
+  const response = await fetch(
+    `/api/queues/${encodeURIComponent(queueId)}/tracks/${encodeURIComponent(trackId)}?expectedVersion=${version}&room=${encodeURIComponent(roomId ?? "")}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!response.ok) {
+    throw new QueueAPIError(
+      response.status,
+      `remove track failed: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+async function reorderServerQueue(
+  queueId: string,
+  version: number,
+  trackIds: string[],
+  roomId?: string
+): Promise<ServerQueue> {
+  const response = await fetch(
+    `/api/queues/${encodeURIComponent(queueId)}/reorder?room=${encodeURIComponent(roomId ?? "")}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        trackIds,
+        expectedVersion: version,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new QueueAPIError(
+      response.status,
+      `reorder queue failed: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+
+async function addTrackWithRetry(
+  queueId: string,
+  version: number,
+  track: MediaTrack,
+  roomId?: string
+): Promise<ServerQueue> {
+  try {
+    return await addTrackToServerQueue(
+      queueId,
+      version,
+      track,
+      roomId
+    );
+  } catch (error) {
+    if (!(error instanceof QueueAPIError) || error.status !== 409) {
+      throw error;
+    }
+
+    const latest = await fetchServerQueue(queueId);
+
+    if (latest.tracks.some((item) => item.id === track.id)) {
+      return latest;
+    }
+
+    return addTrackToServerQueue(
+      queueId,
+      latest.version,
+      track,
+      roomId
+    );
+  }
+}
+
+async function removeTrackWithRetry(
+  queueId: string,
+  version: number,
+  trackId: string,
+  roomId?: string
+): Promise<ServerQueue> {
+  try {
+    return await removeTrackFromServerQueue(
+      queueId,
+      version,
+      trackId,
+      roomId
+    );
+  } catch (error) {
+    if (!(error instanceof QueueAPIError) || error.status !== 409) {
+      throw error;
+    }
+
+    const latest = await fetchServerQueue(queueId);
+
+    if (!latest.tracks.some((item) => item.id === trackId)) {
+      return latest;
+    }
+
+    return removeTrackFromServerQueue(
+      queueId,
+      latest.version,
+      trackId,
+      roomId
+    );
+  }
+}
+
+async function reorderQueueWithRetry(
+  queueId: string,
+  version: number,
+  trackIds: string[],
+  roomId?: string
+): Promise<ServerQueue> {
+  try {
+    return await reorderServerQueue(
+      queueId,
+      version,
+      trackIds,
+      roomId
+    );
+  } catch (error) {
+    if (!(error instanceof QueueAPIError) || error.status !== 409) {
+      throw error;
+    }
+
+    const latest = await fetchServerQueue(queueId);
+
+    /*
+     * Reordering only makes sense if both clients still
+     * contain exactly the same track set.
+     */
+    const latestIds = latest.tracks.map((track) => track.id);
+
+    const sameTracks =
+      latestIds.length === trackIds.length &&
+      latestIds.every((id) => trackIds.includes(id));
+
+    if (!sameTracks) {
+      return latest;
+    }
+
+    return reorderServerQueue(
+      queueId,
+      latest.version,
+      trackIds,
+      roomId
+    );
+  }
+}
+
 export default function App() {
   const [modeIndex, setModeIndex] = useState(0);
   const [duration, setDuration] = useState(DEFAULT_DURATION_SECONDS);
@@ -145,10 +451,46 @@ export default function App() {
   const [mediaPlaying, setMediaPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [serverQueueId, setServerQueueId] =
+    useState<string | null>(null);
+
+  const [serverQueueVersion, setServerQueueVersion] =
+    useState<number | null>(null);
+
+  const [serverQueueReady, setServerQueueReady] =
+    useState(false);
+
+  const [roomId] = useState(() => {
+    try {
+      const existing =
+        localStorage.getItem(SAIGON_ROOM_STORAGE_KEY);
+
+      if (existing) return existing;
+
+      const created =
+        Math.random()
+          .toString(36)
+          .slice(2, 8)
+          .toUpperCase();
+
+      localStorage.setItem(
+        SAIGON_ROOM_STORAGE_KEY,
+        created
+      );
+
+      return created;
+    } catch {
+      return "LOCAL";
+    }
+  });
+  const [repeatMode, setRepeatMode] =
+    useState<"off" | "all" | "one">(() => loadSavedRepeatMode());
+  const [shuffleEnabled, setShuffleEnabled] =
+    useState(() => loadSavedShuffle());
   const [draggedTrackIndex, setDraggedTrackIndex] =
     useState<number | null>(null);
   const [mediaQueue, setMediaQueue] =
-    useState<MediaTrack[]>(INITIAL_MEDIA_QUEUE);
+    useState<MediaTrack[]>(() => loadSavedQueue());
 
   const [recommendations, setRecommendations] =
     useState<YouTubeRecommendation[]>([]);
@@ -170,6 +512,15 @@ export default function App() {
 
   const youtubePlayerRef =
     useRef<YouTubePlayerInstance | null>(null);
+  const realtimeSocketRef = useRef<WebSocket | null>(null);
+
+  const mediaQueueRef = useRef<MediaTrack[]>([]);
+  const currentTrackIndexRef = useRef(0);
+  const repeatModeRef =
+    useRef<"off" | "all" | "one">("all");
+  const shuffleEnabledRef = useRef(false);
+  const shuffleBagRef = useRef<number[]>([]);
+  const shuffleHistoryRef = useRef<number[]>([]);
 
   const lcdTitleRef = useRef<HTMLSpanElement | null>(null);
   const lcdTitleFrameRef = useRef<number | null>(null);
@@ -193,8 +544,481 @@ export default function App() {
 
   const currentTrack = mediaQueue[currentTrackIndex] ?? null;
 
+  const sendRealtimeEvent = (
+    type: string,
+    payload: unknown
+  ) => {
+    const socket = realtimeSocketRef.current;
+
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    socket.send(
+      JSON.stringify({
+        type,
+        roomId,
+        sentAt: Date.now(),
+        payload,
+      })
+    );
+  };
+
+  const applyRemotePlayback = (
+    payload: {
+      playing?: boolean;
+      trackId?: string | null;
+      position?: number;
+    },
+    sentAt?: number
+  ) => {
+    const basePosition =
+      typeof payload.position === "number"
+        ? payload.position
+        : 0;
+
+    const networkDelay =
+      payload.playing && typeof sentAt === "number"
+        ? Math.max(0, (Date.now() - sentAt) / 1000)
+        : 0;
+
+    const targetPosition =
+      basePosition + networkDelay;
+
+    const player = youtubePlayerRef.current;
+
+    if (
+      player &&
+      Number.isFinite(targetPosition)
+    ) {
+      const localPosition = player.getCurrentTime();
+
+      const drift = Math.abs(
+        localPosition - targetPosition
+      );
+
+      /*
+       * Ignore tiny differences to avoid constant seeking.
+       */
+      if (drift > 0.75) {
+        player.seekTo(targetPosition, true);
+      }
+    }
+
+    setMediaCurrentTime(targetPosition);
+
+    if (typeof payload.playing === "boolean") {
+      setMediaPlaying(payload.playing);
+    }
+  };
+
+  const applyServerQueue = (queue: ServerQueue) => {
+    const activeTrackId = currentTrack?.id;
+
+    const nextTracks = queue.tracks.map(
+      ({ position: _position, ...track }) => track
+    );
+
+    setServerQueueId(queue.id);
+    setServerQueueVersion(queue.version);
+    setServerQueueReady(true);
+    setMediaQueue(nextTracks);
+
+    if (activeTrackId) {
+      const nextIndex = nextTracks.findIndex(
+        (track) => track.id === activeTrackId
+      );
+
+      if (nextIndex !== -1) {
+        setCurrentTrackIndex(nextIndex);
+        return;
+      }
+    }
+
+    if (nextTracks.length === 0) {
+      setCurrentTrackIndex(0);
+      setMediaPlaying(false);
+    } else {
+      setCurrentTrackIndex((index) =>
+        Math.min(index, nextTracks.length - 1)
+      );
+    }
+  };
+
+  /*
+   * Bootstrap durable server queue.
+   * PostgreSQL is authoritative when available.
+   * Existing localStorage remains the offline fallback.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      try {
+        const savedQueueId =
+          localStorage.getItem(
+            SAIGON_SERVER_QUEUE_ID_KEY
+          );
+
+        let queue: ServerQueue;
+
+        if (savedQueueId) {
+          try {
+            queue = await fetchServerQueue(savedQueueId);
+          } catch {
+            queue = await createServerQueue();
+          }
+        } else {
+          queue = await createServerQueue();
+        }
+
+        if (cancelled) return;
+
+        localStorage.setItem(
+          SAIGON_SERVER_QUEUE_ID_KEY,
+          queue.id
+        );
+
+        setServerQueueId(queue.id);
+        setServerQueueVersion(queue.version);
+
+        if (queue.tracks.length > 0) {
+          /*
+           * Existing PostgreSQL state wins.
+           */
+          setMediaQueue(
+            queue.tracks.map(
+              ({ position: _position, ...track }) =>
+                track
+            )
+          );
+        } else if (mediaQueue.length > 0) {
+          /*
+           * One-time migration from the old localStorage
+           * queue into PostgreSQL.
+           */
+          let migrated = queue;
+
+          for (const track of mediaQueue) {
+            migrated = await addTrackWithRetry(
+              migrated.id,
+              migrated.version,
+              track
+            );
+          }
+
+          if (!cancelled) {
+            setServerQueueVersion(migrated.version);
+
+            setMediaQueue(
+              migrated.tracks.map(
+                ({ position: _position, ...track }) =>
+                  track
+              )
+            );
+          }
+        }
+
+        setServerQueueReady(true);
+      } catch (error) {
+        console.warn(
+          "Server queue unavailable; using local queue",
+          error
+        );
+
+        if (!cancelled) {
+          setServerQueueReady(false);
+        }
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  mediaQueueRef.current = mediaQueue;
+  currentTrackIndexRef.current = currentTrackIndex;
+  repeatModeRef.current = repeatMode;
+  shuffleEnabledRef.current = shuffleEnabled;
+
+  /*
+   * Persist repeat + shuffle preferences.
+   */
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        SAIGON_REPEAT_STORAGE_KEY,
+        repeatMode
+      );
+    } catch {
+      // Ignore unavailable storage.
+    }
+  }, [repeatMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        SAIGON_SHUFFLE_STORAGE_KEY,
+        String(shuffleEnabled)
+      );
+    } catch {
+      // Ignore unavailable storage.
+    }
+  }, [shuffleEnabled]);
+
+  const availableRecommendations = recommendations.filter(
+    (recommendation) =>
+      !mediaQueue.some(
+        (track) => track.videoId === recommendation.id
+      )
+  );
+
+  /*
+   * Restore previously selected queue item after startup.
+   */
+  useEffect(() => {
+    const savedTrackId = loadSavedTrackId();
+
+    if (!savedTrackId || mediaQueue.length === 0) {
+      return;
+    }
+
+    const index = mediaQueue.findIndex(
+      (track) => track.id === savedTrackId
+    );
+
+    if (index !== -1) {
+      setCurrentTrackIndex(index);
+    }
+  }, []);
+
+
+  /*
+   * Persist queue changes: adds, removes and drag reordering.
+   */
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        SAIGON_QUEUE_STORAGE_KEY,
+        JSON.stringify(mediaQueue)
+      );
+    } catch {
+      // Storage may be unavailable in private/restricted environments.
+    }
+  }, [mediaQueue]);
+
+
+  /*
+   * Persist the active song independently from its queue index,
+   * because drag-and-drop can change the index.
+   */
+  useEffect(() => {
+    try {
+      if (currentTrack?.id) {
+        localStorage.setItem(
+          SAIGON_TRACK_STORAGE_KEY,
+          currentTrack.id
+        );
+      } else {
+        localStorage.removeItem(
+          SAIGON_TRACK_STORAGE_KEY
+        );
+      }
+    } catch {
+      // Ignore unavailable storage.
+    }
+  }, [currentTrack?.id]);
+
   const mode = MODES[modeIndex];
   const displayTime = splitTime(remaining);
+
+  /*
+   * Realtime queue synchronization.
+   * REST remains authoritative for writes;
+   * WebSocket pushes committed PostgreSQL state to peers.
+   */
+  useEffect(() => {
+    const socket = new WebSocket(
+      `/ws?room=${encodeURIComponent(roomId)}`
+    );
+
+    realtimeSocketRef.current = socket;
+
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+
+        if (
+          message.type === "room.snapshot" &&
+          message.payload
+        ) {
+          const snapshot = message.payload as {
+            queue?: ServerQueue;
+            playback?: {
+              type?: string;
+              sentAt?: number;
+              payload?: {
+                playing?: boolean;
+                trackId?: string | null;
+                position?: number;
+              };
+            };
+          };
+
+          if (snapshot.queue) {
+            applyServerQueue(snapshot.queue);
+          }
+
+          if (
+            snapshot.playback?.payload
+          ) {
+            const playback =
+              snapshot.playback.payload;
+
+            if (playback.trackId) {
+              const index =
+                mediaQueueRef.current.findIndex(
+                  (track) =>
+                    track.id === playback.trackId
+                );
+
+              if (index !== -1) {
+                const track =
+                  mediaQueueRef.current[index];
+
+                currentTrackIndexRef.current =
+                  index;
+
+                setCurrentTrackIndex(index);
+
+                if (
+                  track?.videoId &&
+                  youtubePlayerRef.current
+                ) {
+                  youtubePlayerRef.current
+                    .loadVideoById(track.videoId);
+                }
+              }
+            }
+
+            applyRemotePlayback(
+              playback,
+              snapshot.playback.sentAt
+            );
+          }
+        }
+
+        if (
+          message.type === "queue.updated" &&
+          message.payload
+        ) {
+          applyServerQueue(
+            message.payload as ServerQueue
+          );
+        }
+
+        if (
+          message.type === "playback.state" &&
+          message.payload
+        ) {
+          applyRemotePlayback(
+            message.payload,
+            message.sentAt
+          );
+        }
+
+        if (
+          message.type === "playback.track" &&
+          message.payload?.trackId
+        ) {
+          const trackId = String(
+            message.payload.trackId
+          );
+
+          const index = mediaQueueRef.current.findIndex(
+            (track) => track.id === trackId
+          );
+
+          if (index !== -1) {
+            const track = mediaQueueRef.current[index];
+
+            currentTrackIndexRef.current = index;
+            setCurrentTrackIndex(index);
+            setMediaCurrentTime(0);
+
+            if (
+              track?.videoId &&
+              youtubePlayerRef.current
+            ) {
+              youtubePlayerRef.current.loadVideoById(
+                track.videoId
+              );
+            }
+
+            setMediaPlaying(
+              message.payload.playing !== false
+            );
+          }
+        }
+      } catch (error) {
+        console.warn(
+          "Invalid realtime queue event:",
+          error
+        );
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.warn(
+        "Realtime WebSocket error:",
+        error
+      );
+    };
+
+    return () => {
+      if (realtimeSocketRef.current === socket) {
+        realtimeSocketRef.current = null;
+      }
+
+      socket.close();
+    };
+  }, [roomId]);
+
+  /*
+   * Periodic playback sync heartbeat.
+   * Keeps long-running rooms from slowly drifting apart.
+   */
+  useEffect(() => {
+    if (!mediaPlaying || !currentTrack?.id) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      const player = youtubePlayerRef.current;
+
+      if (!player) return;
+
+      sendRealtimeEvent(
+        "playback.state",
+        {
+          playing: true,
+          trackId: currentTrack.id,
+          position: player.getCurrentTime(),
+        }
+      );
+    }, 5000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [
+    mediaPlaying,
+    currentTrack?.id,
+    roomId,
+  ]);
 
   const environmentProgress =
     duration > 0
@@ -241,9 +1065,99 @@ export default function App() {
                 setMediaVisualReady(true);
               }
 
-              if (event.data === 2 || event.data === 0) {
+              if (event.data === 2) {
                 setMediaPlaying(false);
                 setMediaVisualReady(false);
+              }
+
+              /* 0 = ended */
+              if (event.data === 0) {
+                setMediaVisualReady(false);
+
+                const queue = mediaQueueRef.current;
+                const index = currentTrackIndexRef.current;
+                const repeat = repeatModeRef.current;
+                const shuffle = shuffleEnabledRef.current;
+
+                if (queue.length === 0) {
+                  setMediaPlaying(false);
+                  return;
+                }
+
+                /* Repeat current song */
+                if (repeat === "one") {
+                  const track = queue[index];
+
+                  if (track?.videoId) {
+                    setMediaCurrentTime(0);
+                    setMediaPlaying(true);
+
+                    window.setTimeout(() => {
+                      youtubePlayerRef.current?.loadVideoById(
+                        track.videoId!
+                      );
+                    }, 0);
+                  }
+
+                  return;
+                }
+
+                const atLastTrack =
+                  index >= queue.length - 1;
+
+                /*
+                 * Repeat OFF stops after the final track when
+                 * normal queue traversal is being used.
+                 */
+                if (
+                  repeat === "off" &&
+                  !shuffle &&
+                  atLastTrack
+                ) {
+                  setMediaPlaying(false);
+                  return;
+                }
+
+                let nextIndex: number;
+
+                if (shuffle && queue.length > 1) {
+                  const candidates = queue
+                    .map((_, candidateIndex) => candidateIndex)
+                    .filter(
+                      (candidateIndex) =>
+                        candidateIndex !== index
+                    );
+
+                  nextIndex =
+                    candidates[
+                      Math.floor(
+                        Math.random() * candidates.length
+                      )
+                    ];
+                } else {
+                  nextIndex = atLastTrack
+                    ? 0
+                    : index + 1;
+                }
+
+                const nextTrack = queue[nextIndex];
+
+                currentTrackIndexRef.current = nextIndex;
+                setCurrentTrackIndex(nextIndex);
+                setMediaCurrentTime(0);
+                setMediaDuration(0);
+
+                if (nextTrack?.videoId) {
+                  setMediaPlaying(true);
+
+                  window.setTimeout(() => {
+                    youtubePlayerRef.current?.loadVideoById(
+                      nextTrack.videoId!
+                    );
+                  }, 0);
+                } else {
+                  setMediaPlaying(false);
+                }
               }
 
               /* 3 = buffering */
@@ -586,29 +1500,69 @@ export default function App() {
     return () => window.clearInterval(interval);
   }, [running, remaining]);
 
-  const addRecommendationToQueue = (
+  const playTrackAtIndex = (
+    index: number
+  ) => {
+    if (mediaQueue.length === 0) return;
+
+    /*
+     * Wrap around the queue so previous on the first track
+     * goes to the last track and next on the last track goes
+     * back to the first.
+     */
+    const normalizedIndex =
+      ((index % mediaQueue.length) +
+        mediaQueue.length) %
+      mediaQueue.length;
+
+    const track = mediaQueue[normalizedIndex];
+
+    if (!track) return;
+
+    setCurrentTrackIndex(normalizedIndex);
+
+    sendRealtimeEvent(
+      "playback.track",
+      {
+        trackId: track.id,
+        playing: true,
+        position: 0,
+      }
+    );
+
+    setMediaCurrentTime(0);
+    setMediaDuration(0);
+
+    if (!track.videoId) {
+      setMediaPlaying(false);
+      return;
+    }
+
+    setMediaPlaying(true);
+
+    if (
+      youtubePlayerReady &&
+      youtubePlayerRef.current
+    ) {
+      youtubePlayerRef.current.loadVideoById(
+        track.videoId
+      );
+    }
+  };
+
+  const addRecommendationToQueue = async (
     recommendation: YouTubeRecommendation
   ) => {
-    /*
-     * Choosing a recommendation becomes the seed for the
-     * next recommendation batch.
-     */
     setDiscoveryQuery(
       `${recommendation.title} ${recommendation.artist}`
     );
+
     const existingIndex = mediaQueue.findIndex(
       (track) => track.videoId === recommendation.id
     );
 
-    /* Already queued: select it and play */
     if (existingIndex !== -1) {
-      setCurrentTrackIndex(existingIndex);
-      setMediaPlaying(true);
-
-      if (youtubePlayerReady && youtubePlayerRef.current) {
-        youtubePlayerRef.current.loadVideoById(recommendation.id);
-      }
-
+      playTrackAtIndex(existingIndex);
       return;
     }
 
@@ -619,48 +1573,67 @@ export default function App() {
       videoId: recommendation.id,
     };
 
-    const newIndex = mediaQueue.length;
-
-    setMediaQueue((queue) => [...queue, newTrack]);
-    setCurrentTrackIndex(newIndex);
-    setMediaCurrentTime(0);
-    setMediaDuration(0);
-    setMediaPlaying(true);
-
     /*
-     * Start immediately from this user click.
-     * This also helps with browser autoplay restrictions.
+     * Optimistic local update keeps the player responsive.
      */
-    if (youtubePlayerReady && youtubePlayerRef.current) {
-      youtubePlayerRef.current.loadVideoById(recommendation.id);
-    }
-  };
-
-  const playTrackAtIndex = (index: number) => {
-    if (mediaQueue.length === 0) {
-      setMediaPlaying(false);
-      return;
-    }
-
-    const safeIndex =
-      ((index % mediaQueue.length) + mediaQueue.length) %
-      mediaQueue.length;
-
-    const track = mediaQueue[safeIndex];
-
-    setCurrentTrackIndex(safeIndex);
+    const optimisticIndex = mediaQueue.length;
+    setMediaQueue((queue) => [...queue, newTrack]);
+    setCurrentTrackIndex(optimisticIndex);
     setMediaCurrentTime(0);
     setMediaDuration(0);
-
-    if (!track?.videoId) {
-      setMediaPlaying(false);
-      return;
-    }
-
     setMediaPlaying(true);
 
-    if (youtubePlayerReady && youtubePlayerRef.current) {
-      youtubePlayerRef.current.loadVideoById(track.videoId);
+    try {
+      if (
+        serverQueueReady &&
+        serverQueueId &&
+        serverQueueVersion !== null
+      ) {
+        const queue = await addTrackWithRetry(
+          serverQueueId,
+          serverQueueVersion,
+          newTrack,
+          roomId
+        );
+
+        applyServerQueue(queue);
+
+        const index = queue.tracks.findIndex(
+          (track) => track.id === newTrack.id
+        );
+
+        if (index !== -1) {
+          setCurrentTrackIndex(index);
+        }
+      }
+
+      if (
+        youtubePlayerReady &&
+        youtubePlayerRef.current &&
+        newTrack.videoId
+      ) {
+        youtubePlayerRef.current.loadVideoById(
+          newTrack.videoId
+        );
+      }
+    } catch (error) {
+      console.error("Could not persist queued track:", error);
+
+      /*
+       * Reconcile with server if our optimistic write lost
+       * a version race.
+       */
+      if (serverQueueId) {
+        try {
+          const latest = await fetchServerQueue(serverQueueId);
+          applyServerQueue(latest);
+        } catch (refreshError) {
+          console.error(
+            "Could not reconcile server queue:",
+            refreshError
+          );
+        }
+      }
     }
   };
 
@@ -677,23 +1650,126 @@ export default function App() {
     setManualSearch("");
   };
 
+  const seekFromPointer = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (
+      mediaDuration <= 0 ||
+      !youtubePlayerRef.current
+    ) {
+      return;
+    }
+
+    const rect =
+      event.currentTarget.getBoundingClientRect();
+
+    const ratio = Math.min(
+      1,
+      Math.max(
+        0,
+        (event.clientX - rect.left) / rect.width
+      )
+    );
+
+    const nextTime = ratio * mediaDuration;
+
+    sendRealtimeEvent(
+      "playback.state",
+      {
+        playing: mediaPlaying,
+        trackId: currentTrack?.id ?? null,
+        position: nextTime,
+      }
+    );
+
+    setMediaCurrentTime(nextTime);
+
+    youtubePlayerRef.current.seekTo(
+      nextTime,
+      true
+    );
+  };
+
   const previousTrack = () => {
     if (mediaQueue.length === 0) return;
 
+    if (shuffleEnabled) {
+      const previousIndex =
+        shuffleHistoryRef.current.pop();
+
+      if (previousIndex !== undefined) {
+        playTrackAtIndex(previousIndex);
+      }
+
+      return;
+    }
+
     playTrackAtIndex(currentTrackIndex - 1);
+  };
+
+  const refillShuffleBag = (
+    currentIndex: number
+  ) => {
+    const indices = mediaQueue
+      .map((_, index) => index)
+      .filter((index) => index !== currentIndex);
+
+    for (let i = indices.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+
+      [indices[i], indices[j]] = [
+        indices[j],
+        indices[i],
+      ];
+    }
+
+    shuffleBagRef.current = indices;
+  };
+
+  const getNextShuffleIndex = (
+    currentIndex: number
+  ) => {
+    if (mediaQueue.length <= 1) {
+      return currentIndex;
+    }
+
+    if (shuffleBagRef.current.length === 0) {
+      refillShuffleBag(currentIndex);
+    }
+
+    return (
+      shuffleBagRef.current.shift() ??
+      currentIndex
+    );
   };
 
   const nextTrack = () => {
     if (mediaQueue.length === 0) return;
 
+    if (shuffleEnabled) {
+      const nextIndex =
+        getNextShuffleIndex(currentTrackIndex);
+
+      shuffleHistoryRef.current.push(
+        currentTrackIndex
+      );
+
+      playTrackAtIndex(nextIndex);
+      return;
+    }
+
     playTrackAtIndex(currentTrackIndex + 1);
   };
+
 
   const selectTrack = (index: number) => {
     playTrackAtIndex(index);
   };
 
-  const moveTrack = (fromIndex: number, toIndex: number) => {
+  const moveTrack = async (
+    fromIndex: number,
+    toIndex: number
+  ) => {
     if (
       fromIndex === toIndex ||
       fromIndex < 0 ||
@@ -706,27 +1782,57 @@ export default function App() {
 
     const activeTrackId = currentTrack?.id;
 
-    setMediaQueue((queue) => {
-      const nextQueue = [...queue];
-      const [movedTrack] = nextQueue.splice(fromIndex, 1);
+    const nextQueue = [...mediaQueue];
+    const [movedTrack] = nextQueue.splice(fromIndex, 1);
+    nextQueue.splice(toIndex, 0, movedTrack);
 
-      nextQueue.splice(toIndex, 0, movedTrack);
+    setMediaQueue(nextQueue);
 
-      if (activeTrackId) {
-        const nextActiveIndex = nextQueue.findIndex(
-          (track) => track.id === activeTrackId
+    if (activeTrackId) {
+      const nextActiveIndex = nextQueue.findIndex(
+        (track) => track.id === activeTrackId
+      );
+
+      if (nextActiveIndex !== -1) {
+        setCurrentTrackIndex(nextActiveIndex);
+      }
+    }
+
+    try {
+      if (
+        serverQueueReady &&
+        serverQueueId &&
+        serverQueueVersion !== null
+      ) {
+        const queue = await reorderQueueWithRetry(
+          serverQueueId,
+          serverQueueVersion,
+          nextQueue.map((track) => track.id),
+          roomId
         );
 
-        if (nextActiveIndex !== -1) {
-          setCurrentTrackIndex(nextActiveIndex);
+        applyServerQueue(queue);
+      }
+    } catch (error) {
+      console.error("Could not persist queue reorder:", error);
+
+      if (serverQueueId) {
+        try {
+          const latest = await fetchServerQueue(serverQueueId);
+          applyServerQueue(latest);
+        } catch (refreshError) {
+          console.error(
+            "Could not reconcile reordered queue:",
+            refreshError
+          );
         }
       }
-
-      return nextQueue;
-    });
+    }
   };
 
-  const removeTrack = (index: number) => {
+  const removeTrack = async (
+    index: number
+  ) => {
     const trackToRemove = mediaQueue[index];
 
     if (!trackToRemove) return;
@@ -747,39 +1853,72 @@ export default function App() {
       setMediaDuration(0);
 
       youtubePlayerRef.current?.pauseVideo();
-      return;
-    }
-
-    if (removingCurrent) {
-      const nextIndex = Math.min(index, nextQueue.length - 1);
-      const nextTrack = nextQueue[nextIndex];
+    } else if (removingCurrent) {
+      const nextIndex = Math.min(
+        index,
+        nextQueue.length - 1
+      );
 
       setCurrentTrackIndex(nextIndex);
-      setMediaCurrentTime(0);
-      setMediaDuration(0);
+
+      const nextTrack = nextQueue[nextIndex];
 
       if (nextTrack?.videoId) {
         setMediaPlaying(true);
 
-        if (youtubePlayerReady && youtubePlayerRef.current) {
-          youtubePlayerRef.current.loadVideoById(nextTrack.videoId);
+        if (
+          youtubePlayerReady &&
+          youtubePlayerRef.current
+        ) {
+          youtubePlayerRef.current.loadVideoById(
+            nextTrack.videoId
+          );
         }
       } else {
         setMediaPlaying(false);
       }
+    } else {
+      const activeTrackId = currentTrack?.id;
 
-      return;
+      if (activeTrackId) {
+        const nextIndex = nextQueue.findIndex(
+          (track) => track.id === activeTrackId
+        );
+
+        if (nextIndex !== -1) {
+          setCurrentTrackIndex(nextIndex);
+        }
+      }
     }
 
-    const activeTrackId = currentTrack?.id;
+    try {
+      if (
+        serverQueueReady &&
+        serverQueueId &&
+        serverQueueVersion !== null
+      ) {
+        const queue = await removeTrackWithRetry(
+          serverQueueId,
+          serverQueueVersion,
+          trackToRemove.id,
+          roomId
+        );
 
-    if (activeTrackId) {
-      const nextActiveIndex = nextQueue.findIndex(
-        (track) => track.id === activeTrackId
-      );
+        applyServerQueue(queue);
+      }
+    } catch (error) {
+      console.error("Could not persist queue removal:", error);
 
-      if (nextActiveIndex !== -1) {
-        setCurrentTrackIndex(nextActiveIndex);
+      if (serverQueueId) {
+        try {
+          const latest = await fetchServerQueue(serverQueueId);
+          applyServerQueue(latest);
+        } catch (refreshError) {
+          console.error(
+            "Could not reconcile removed track:",
+            refreshError
+          );
+        }
       }
     }
   };
@@ -1071,7 +2210,22 @@ export default function App() {
             className="player-hit player-hit-play"
             type="button"
             aria-label={mediaPlaying ? "Pause" : "Play"}
-            onClick={() => setMediaPlaying((value) => !value)}
+            onClick={() => {
+              setMediaPlaying((value) => {
+                const nextPlaying = !value;
+
+                sendRealtimeEvent(
+                  "playback.state",
+                  {
+                    playing: nextPlaying,
+                    trackId: currentTrack?.id ?? null,
+                    position: mediaCurrentTime,
+                  }
+                );
+
+                return nextPlaying;
+              });
+            }}
           />
 
           <button
@@ -1110,7 +2264,30 @@ export default function App() {
           </div>
           <span>{currentTrack?.artist ?? "GỢI Ý TRỰC TUYẾN"}</span>
 
-          <div className="player-progress" aria-hidden="true">
+          <div
+            className="player-progress"
+            role="slider"
+            aria-label="Track progress"
+            aria-valuemin={0}
+            aria-valuemax={Math.floor(mediaDuration)}
+            aria-valuenow={Math.floor(mediaCurrentTime)}
+            onPointerDown={(event) => {
+              event.currentTarget.setPointerCapture(
+                event.pointerId
+              );
+
+              seekFromPointer(event);
+            }}
+            onPointerMove={(event) => {
+              if (
+                event.currentTarget.hasPointerCapture(
+                  event.pointerId
+                )
+              ) {
+                seekFromPointer(event);
+              }
+            }}
+          >
             {Array.from({ length: 10 }, (_, index) => {
               const progress =
                 mediaDuration > 0
@@ -1175,6 +2352,48 @@ export default function App() {
           <div className="player-popover">
             <div className="player-popover-title">
               <span>QUEUE</span>
+
+              <button
+                className={
+                  shuffleEnabled
+                    ? "player-shuffle active"
+                    : "player-shuffle"
+                }
+                type="button"
+                onClick={() => {
+                  shuffleBagRef.current = [];
+                  shuffleHistoryRef.current = [];
+
+                  setShuffleEnabled(
+                    (value) => !value
+                  );
+                }}
+                title="Shuffle"
+              >
+                ⇄
+              </button>
+
+              <button
+                className="player-repeat"
+                type="button"
+                onClick={() =>
+                  setRepeatMode((mode) =>
+                    mode === "off"
+                      ? "all"
+                      : mode === "all"
+                        ? "one"
+                        : "off"
+                  )
+                }
+                title="Repeat mode"
+              >
+                {repeatMode === "one"
+                  ? "↻1"
+                  : repeatMode === "all"
+                    ? "↻"
+                    : "→"}
+              </button>
+
               <span>{String(mediaQueue.length).padStart(2, "0")}</span>
             </div>
 
@@ -1308,28 +2527,23 @@ export default function App() {
                 <div className="player-popover-loading">
                   ĐANG TẢI...
                 </div>
-              ) : recommendations.length === 0 ? (
+              ) : availableRecommendations.length === 0 ? (
                 <div className="player-popover-loading">
                   KHÔNG CÓ GỢI Ý
                 </div>
               ) : (
-                recommendations.map((recommendation) => {
-                  const alreadyQueued = mediaQueue.some(
-                    (track) => track.videoId === recommendation.id
-                  );
-
+                availableRecommendations.map((recommendation) => {
                   return (
                     <button
                       key={recommendation.id}
                       type="button"
                       className="player-popover-rec"
-                      disabled={alreadyQueued}
                       onClick={() =>
                         addRecommendationToQueue(recommendation)
                       }
                     >
                       <span className="player-popover-rec-action">
-                        {alreadyQueued ? "✓" : "+"}
+                        +
                       </span>
 
                       <span className="player-popover-copy">

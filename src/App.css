@@ -49,18 +49,6 @@ button {
   position: absolute;
   inset: -4%;
   background:
-    radial-gradient(
-      ellipse at 36% 38%,
-      rgba(220, 220, 220, 0.7) 0 7%,
-      rgba(90, 90, 90, 0.55) 8% 18%,
-      transparent 25%
-    ),
-    radial-gradient(
-      ellipse at 71% 42%,
-      rgba(200, 200, 200, 0.38) 0 8%,
-      rgba(70, 70, 70, 0.42) 10% 22%,
-      transparent 31%
-    ),
     linear-gradient(115deg, #101010, #696969 48%, #141414);
   filter: grayscale(1) blur(6px) brightness(0.42) contrast(1.07);
   transform: scale(1.08);
@@ -5819,3 +5807,87 @@ button {
   display: none !important;
 }
 
+
+.player-repeat {
+  padding: 0 3px !important;
+  border: 0 !important;
+  background: transparent !important;
+
+  color: rgba(92, 112, 76, .8) !important;
+
+  font-family: inherit !important;
+  font-size: 8px !important;
+  font-weight: 700 !important;
+
+  cursor: pointer !important;
+}
+
+.player-repeat:hover {
+  color: #263324 !important;
+}
+
+
+.player-shuffle {
+  padding: 0 3px !important;
+  border: 0 !important;
+  background: transparent !important;
+
+  color: rgba(92, 112, 76, .42) !important;
+
+  font-family: inherit !important;
+  font-size: 8px !important;
+  font-weight: 700 !important;
+
+  cursor: pointer !important;
+}
+
+.player-shuffle.active {
+  color: #263324 !important;
+}
+
+.player-shuffle:hover {
+  color: #263324 !important;
+}
+
+
+/* ==========================================================
+   LCD PROGRESS — SEEK / SCRUB
+========================================================== */
+
+.player-progress {
+  cursor: pointer !important;
+  touch-action: none !important;
+  user-select: none !important;
+}
+
+.player-progress:hover {
+  filter: brightness(1.15);
+}
+
+
+/* ==========================================================
+   GLOBAL — REMOVE BACKGROUND LIGHT BLOBS
+========================================================== */
+
+.day-night-light,
+.day-halo {
+  display: none !important;
+}
+
+/* ==========================================================
+   RESTORE INTENDED DAY / YELLOW HALO
+========================================================== */
+
+.day-night-light,
+.day-halo {
+  display: block !important;
+}
+
+/* Keep the intended timer-controlled golden environment halo. */
+.day-night-light {
+  display: block !important;
+}
+
+.day-halo {
+  display: block !important;
+}

@@ -2,9 +2,11 @@
 !.vscode/extensions.json
 # Backend cache
 # Editor directories and files
+# Local caches / runtime
 # Local secrets
 # Local/editor artifacts
 # Logs
+# Secrets
 *.backup.*
 *.bak
 *.before-*
@@ -18,6 +20,7 @@
 *.sw?
 *~
 .DS_Store
+.env
 .env.local
 .env.server
 .idea

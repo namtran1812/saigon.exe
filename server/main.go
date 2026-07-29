@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -106,6 +111,25 @@ func (c *persistentCache) get(key string) ([]Recommendation, bool) {
 	}
 
 	if time.Since(entry.CreatedAt) >= cacheTTL {
+		return nil, false
+	}
+
+	return entry.Recommendations, true
+}
+
+/*
+getStale returns an entry even after its TTL expires.
+
+This is intentionally separate from get(): normal requests prefer
+fresh data, while upstream failures can still fall back to the most
+recent successful YouTube response.
+*/
+func (c *persistentCache) getStale(key string) ([]Recommendation, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	entry, ok := c.Entries[key]
+	if !ok || len(entry.Recommendations) == 0 {
 		return nil, false
 	}
 
@@ -219,7 +243,38 @@ func searchYouTube(apiKey, query string) ([]Recommendation, error) {
 	return results, nil
 }
 
+func newInstanceID() string {
+	var value [8]byte
+
+	if _, err := rand.Read(value[:]); err != nil {
+		return fmt.Sprintf(
+			"instance-%d",
+			time.Now().UnixNano(),
+		)
+	}
+
+	return hex.EncodeToString(value[:])
+}
+
 func main() {
+	databaseURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+
+	db, err := pgxpool.New(context.Background(), databaseURL)
+	if err != nil {
+		log.Fatalf("database pool: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(context.Background()); err != nil {
+		log.Fatalf("database ping: %v", err)
+	}
+
+	log.Printf("postgres connected")
+
 	apiKey := strings.TrimSpace(os.Getenv("YOUTUBE_API_KEY"))
 
 	if apiKey == "" {
@@ -229,6 +284,33 @@ func main() {
 	cache := newPersistentCache(cacheFile)
 
 	mux := http.NewServeMux()
+
+	redisAddr := strings.TrimSpace(os.Getenv("REDIS_ADDR"))
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	realtimeRedis := NewRedisRealtime(redisAddr)
+
+	if err := realtimeRedis.Ping(context.Background()); err != nil {
+		log.Fatalf("redis ping: %v", err)
+	}
+	defer realtimeRedis.Close()
+
+	log.Printf("redis connected")
+
+	instanceID := newInstanceID()
+
+	log.Printf("instance id: %s", instanceID)
+
+	hub := NewRoomHub(
+		realtimeRedis,
+		instanceID,
+	)
+	mux.HandleFunc("/ws", hub.serveWS)
+
+	mux.HandleFunc("/api/queues", createQueueHandler(db, hub))
+	mux.HandleFunc("/api/queues/", queueHandler(db, hub))
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -271,8 +353,26 @@ func main() {
 		if err != nil {
 			log.Printf("youtube search failed: %v", err)
 
-			w.Header().Set("Content-Type", "application/json")
+			/*
+				YouTube may be rate-limited, unavailable, or temporarily
+				fail. Prefer slightly old recommendations over breaking
+				the music discovery experience completely.
+			*/
+			if stale, ok := cache.getStale(key); ok {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("X-Saigon-Cache", "STALE")
 
+				json.NewEncoder(w).Encode(map[string]any{
+					"query":   query,
+					"source":  "stale-cache",
+					"warning": "upstream_unavailable",
+					"results": stale,
+				})
+
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadGateway)
 
 			json.NewEncoder(w).Encode(map[string]any{
